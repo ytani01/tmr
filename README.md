@@ -26,21 +26,21 @@ uv sync
 デフォルト設定（作業25分、休憩5分、4サイクル）で開始します。
 
 ```bash
-uv run tmr
+uv run tmr pomodoro
 ```
 
 ### オプションの指定
 作業時間を15分、休憩時間を3分に設定して実行する例：
 
 ```bash
-uv run tmr --work-time 15 --break-time 3
+uv run tmr p --work-time 15 --break-time 3
 ```
 
 ### ヘルプ
 すべてのオプションを確認するには `-h` または `--help` を使用します。
 
 ```
-$ uv run tmr --help
+$ uv run tmr p --help
 Usage: tmr [OPTIONS]
 
 Options:

@@ -13,13 +13,13 @@ class BaseTimer:
     """Base Timer."""
 
     SEC_MIN = 60  # secs per minute
-    TIME_FMT = '%m/%d %T'
+    TIME_FMT = "%m/%d %T"
 
     def __init__(
         self,
         setting_time: float,
         *,
-        prefix = ("Timer", "green"),
+        prefix=("Timer", "green"),
         msg: str = "",
         alarm_params=(3, 0.5, 1.5),
     ):
@@ -36,6 +36,8 @@ class BaseTimer:
         self.pf_color = prefix[1]
         self.msg = msg
         self.alarm_params = alarm_params
+
+        self.alarm_active = True
 
     def main(self):
         """Main."""
@@ -62,12 +64,16 @@ class BaseTimer:
 
                 time.sleep(0.1)
 
+        self.alarm_active = True
         self.ring()
 
         if self.msg:
             click.echo("Press any key to stop alarm ..", nl=False)
 
-        click.pause("")
+        ch = click.getchar()
+        logger.debug(f"ch='{ch}'")
+
+        self.alarm_active = False
 
         if self.msg:
             click.echo(f"\r{time.strftime(self.TIME_FMT)} Done.          ")
@@ -75,10 +81,15 @@ class BaseTimer:
     def alarm(self, count, sec1, sec2):
         """Alarm."""
         for _ in range(count):
+            if not self.alarm_active:
+                break
+            
             click.echo("\a", nl=False)
             time.sleep(sec1)
             click.echo("\a", nl=False)
             time.sleep(sec2)
+
+        self.alarm_active = True
 
     def ring(self):
         """Ring."""

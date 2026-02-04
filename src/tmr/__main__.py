@@ -7,6 +7,7 @@ import click
 from loguru import logger
 
 from . import LOG_FMT, __version__, click_common_opts, logLevel
+from .base_timer import BaseTimer
 
 
 @click.group()
@@ -65,13 +66,11 @@ def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
     )
 
-    from .base_timer import BaseTimer
-
     timer = None
     try:
         timer = BaseTimer(
             setting_time,
-            prefix=("Timer","blue"),
+            prefix=("Timer", "blue"),
             msg="Press any key to stop alarm .. ",
             alarm_params=(alarm_count, alarm_sec1, alarm_sec2),
         )
@@ -93,24 +92,24 @@ cli.add_command(timer, name="t")
 @click.option(
     "--work-time",
     "-w",
-    type=int,
-    default=25,
+    type=float,
+    default=25.0,
     show_default=True,
     help="working time",
 )
 @click.option(
     "--break-time",
     "-b",
-    type=int,
-    default=5,
+    type=float,
+    default=5.0,
     show_default=True,
     help="break time",
 )
 @click.option(
     "--long-break-time",
     "-l",
-    type=int,
-    default=15,
+    type=float,
+    default=15.0,
     show_default=True,
     help="long break time",
 )
@@ -133,12 +132,27 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         )
     )
 
-    from .pomodoro import App
-
-    app = None
     try:
-        app = App(work_time, break_time, long_break_time, cycles)
-        app.main()
+        while True:
+            for _ in range(cycles - 1):
+                BaseTimer(
+                    work_time, prefix=(f"{'WORK':<10}", "green")
+                ).main()
+
+                timer = BaseTimer(
+                    break_time, prefix=(f"{'BREAK':<10}", "red")
+                )
+                timer.main()
+
+            timer = BaseTimer(
+                work_time, prefix=(f"{'WORK':<10}", "green")
+            )
+            timer.main()
+
+            timer = BaseTimer(
+                long_break_time, prefix=(f"{'LONG BREAK':<10}", "red")
+            )
+            timer.main()
 
     except KeyboardInterrupt as e:
         click.echo()
@@ -148,8 +162,6 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         logger.error(f"{type(e).__name__}: {e}")
 
     finally:
-        if app:
-            app.end()
         click.echo("End.")
 
 
