@@ -47,12 +47,12 @@ Options:
   -h, --help                 Show this message and exit.
 ```
 
-### === pomorodo
+### === pomodoro
 
 ```bash
-uv run tmr pomorodo --help
+uv run tmr pomodoro --help
 
-Usage: tmr p [OPTIONS]
+Usage: tmr pomodoro [OPTIONS]
 
   Pomodoro Timer.
 
