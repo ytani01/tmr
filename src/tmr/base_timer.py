@@ -1,32 +1,34 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-import click
 import threading
 import time
+
+import click
 from loguru import logger
 from rich.progress import Progress
-from rich.console import Console
 
 
 class BaseTimer:
     """Base Timer."""
 
     SEC_MIN = 60  # secs per minute
-    
+
     def __init__(
         self,
         setting_time: float,
         prefix: str = "Timer",
         pf_color: str = "green",
-        alarm_params = (3, 0.5, 1.5)
+        alarm_params=(3, 0.5, 1.5),
     ):
         """Constractor."""
-        logger.debug((
-            f"setting_time={setting_time},"
-            f"prefix={prefix},{pf_color},"
-            f"alarm_params={alarm_params}"
-        ))
+        logger.debug(
+            (
+                f"setting_time={setting_time},"
+                f"prefix={prefix},{pf_color},"
+                f"alarm_params={alarm_params}"
+            )
+        )
 
         self.setting_time = setting_time
         self.prefix = prefix
@@ -39,22 +41,22 @@ class BaseTimer:
 
         t_start = time.time()
         with Progress() as progress:
-            task = progress.add_task("", total=self.setting_time*self.SEC_MIN)
+            task = progress.add_task(
+                "", total=self.setting_time * self.SEC_MIN
+            )
             while not progress.finished:
                 t_elapsed = time.time() - t_start
 
                 desc_str = (
                     f"[{self.pf_color}]{self.prefix}[/{self.pf_color}]:"
-                    f"{t_elapsed:4.0f}/{self.setting_time*60:.0f}:"
+                    f"{t_elapsed:4.0f}/{self.setting_time * 60:.0f}:"
                 )
 
                 progress.update(
-                    task,
-                    completed=t_elapsed,
-                    description=desc_str
+                    task, completed=t_elapsed, description=desc_str
                 )
 
-                time.sleep(.1)
+                time.sleep(0.1)
 
         self.ring()
         click.pause("Press any key to stop alarm..")

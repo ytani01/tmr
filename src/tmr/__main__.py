@@ -66,15 +66,17 @@ def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
     )
 
     from .base_timer import BaseTimer
-    
+
     timer = None
     try:
         timer = BaseTimer(
-            setting_time, "Timer", "blue",
-            (alarm_count, alarm_sec1, alarm_sec2)
+            setting_time,
+            "Timer",
+            "blue",
+            (alarm_count, alarm_sec1, alarm_sec2),
         )
         timer.main()
-        
+
     except KeyboardInterrupt as e:
         click.echo()
         logger.warning(type(e).__name__)
