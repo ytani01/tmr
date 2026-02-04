@@ -86,6 +86,7 @@ def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
     finally:
         click.echo("")
 
+
 cli.add_command(timer)
 cli.add_command(timer, name="t")
 
@@ -134,35 +135,29 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         )
     )
 
-    msg="Press any key to next (ESC to end)"
+    msg = "Press any key to next (ESC to end)"
     try:
         while True:
             for _ in range(cycles - 1):
                 BaseTimer(
-                    work_time,
-                    prefix=(f"{'󰜎 WORK':<12}", "green"),
-                    msg=msg
+                    work_time, prefix=(f"{' WORK':<12}", "green"), msg=msg
                 ).main()
 
                 BaseTimer(
-                    break_time,
-                    prefix=(f"{' BREAK':<12}", "red"),
-                    msg=msg
+                    break_time, prefix=(f"{' BREAK':<12}", "red"), msg=msg
                 ).main()
 
             BaseTimer(
-                work_time,
-                prefix=(f"{' WORK':<12}", "green"),
-                msg=msg
+                work_time, prefix=(f"{' WORK':<12}", "green"), msg=msg
             ).main()
 
             BaseTimer(
                 long_break_time,
                 prefix=(f"{'󰒲 LONG BREAK':<12}", "red"),
-                msg=msg
+                msg=msg,
             ).main()
 
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         click.echo("^C")
         # logger.warning(type(e).__name__)
 

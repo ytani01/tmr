@@ -73,7 +73,7 @@ class BaseTimer:
 
         ch = click.getchar()
         logger.debug(f"ch={ch.encode('utf-8')}")
-        if ch == '\x1b':
+        if ch == "\x1b":
             # [ESC] で、終了
             raise KeyboardInterrupt
 
@@ -82,7 +82,7 @@ class BaseTimer:
         if self.msg:
             click.echo(
                 f"\r{time.strftime(self.TIME_FMT)} Done.                    ",
-                nl=False
+                nl=False,
             )
 
     def alarm(self, count, sec1, sec2):
