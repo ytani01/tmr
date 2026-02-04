@@ -13,7 +13,7 @@ from .base_timer import BaseTimer
 @click.group()
 @click_common_opts(__version__)
 def cli(ctx, debug):
-    """Cli."""
+    """Timer CLI."""
     logger.remove()
     logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))
 
@@ -71,7 +71,7 @@ def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
         timer = BaseTimer(
             setting_time,
             prefix=("Timer", "blue"),
-            msg="Press any key to stop alarm .. ",
+            msg="Press any key to stop .. ",
             alarm_params=(alarm_count, alarm_sec1, alarm_sec2),
         )
         timer.main()
@@ -135,31 +135,22 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         )
     )
 
+    PRE_WORK = ("WORK", "green")
+    PRE_BREAK = ("BREAK", "red")
+    PRE_LBREAK = ("LONG_BREAK", "red")
+
     msg = "Press any key to next (ESC to end)"
     try:
         while True:
             for _ in range(cycles - 1):
-                BaseTimer(
-                    work_time, prefix=(f"{' WORK':<12}", "green"), msg=msg
-                ).main()
+                BaseTimer(work_time, prefix=PRE_WORK, msg=msg).main()
+                BaseTimer(break_time, prefix=PRE_BREAK, msg=msg).main()
 
-                BaseTimer(
-                    break_time, prefix=(f"{' BREAK':<12}", "red"), msg=msg
-                ).main()
-
-            BaseTimer(
-                work_time, prefix=(f"{' WORK':<12}", "green"), msg=msg
-            ).main()
-
-            BaseTimer(
-                long_break_time,
-                prefix=(f"{'󰒲 LONG BREAK':<12}", "red"),
-                msg=msg,
-            ).main()
+            BaseTimer(work_time, prefix=PRE_WORK, msg=msg).main()
+            BaseTimer(long_break_time, prefix=PRE_LBREAK, msg=msg).main()
 
     except KeyboardInterrupt:
-        click.echo("^C")
-        # logger.warning(type(e).__name__)
+        click.echo("")
 
     except Exception as e:
         logger.error(f"{type(e).__name__}: {e}")

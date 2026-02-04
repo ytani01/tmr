@@ -44,26 +44,33 @@ class BaseTimer:
         """Main."""
         logger.debug("")
 
-        t_start = time.time()
-
+        # プログレスバー生成
         with Progress() as progress:
             task = progress.add_task(
                 "", total=self.setting_time * self.SEC_MIN
             )
-            while not progress.finished:
-                t_elapsed = time.time() - t_start
 
-                desc_str = (
-                    f"{time.strftime(self.TIME_FMT)} "
-                    f"[{self.pf_color}]{self.prefix}[/{self.pf_color}] "
-                    f"{t_elapsed:.0f}/{self.setting_time * self.SEC_MIN:.0f}s:"
-                )
+            try:
+                # start update loop
+                t_start = time.time()  # 開始時間
+                while not progress.finished:
+                    t_elapsed = time.time() - t_start  # 経過時間
 
-                progress.update(
-                    task, completed=t_elapsed, description=desc_str
-                )
+                    # プログレスバーの行頭の文字列
+                    desc_str = (
+                        f"{time.strftime(self.TIME_FMT)} "
+                        f"[{self.pf_color}]{self.prefix}[/{self.pf_color}] "
+                        f"{t_elapsed:.0f}/{self.setting_time * self.SEC_MIN:.0f}s:"
+                    )
 
-                time.sleep(self.TICK)
+                    progress.update(
+                        task, completed=t_elapsed, description=desc_str
+                    )
+
+                    time.sleep(self.TICK)
+
+            except KeyboardInterrupt as e:
+                logger.debug(f"{type(e).__name__}")
 
         self.alarm_active = True
         self.ring()
@@ -73,7 +80,7 @@ class BaseTimer:
 
         ch = click.getchar()
         logger.debug(f"ch={ch.encode('utf-8')}")
-        if ch == "\x1b":
+        if ch == "\x1b":  # [ESC]
             # [ESC] で、終了
             raise KeyboardInterrupt
 
