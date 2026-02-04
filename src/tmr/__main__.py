@@ -71,9 +71,9 @@ def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
     try:
         timer = BaseTimer(
             setting_time,
-            "Timer",
-            "blue",
-            (alarm_count, alarm_sec1, alarm_sec2),
+            prefix=("Timer","blue"),
+            msg="Press any key to stop alarm .. ",
+            alarm_params=(alarm_count, alarm_sec1, alarm_sec2),
         )
         timer.main()
 

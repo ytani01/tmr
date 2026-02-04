@@ -13,26 +13,28 @@ class BaseTimer:
     """Base Timer."""
 
     SEC_MIN = 60  # secs per minute
+    TIME_FMT = '%m/%d %T'
 
     def __init__(
         self,
         setting_time: float,
-        prefix: str = "Timer",
-        pf_color: str = "green",
+        *,
+        prefix = ("Timer", "green"),
+        msg: str = "",
         alarm_params=(3, 0.5, 1.5),
     ):
         """Constractor."""
         logger.debug(
-            (
-                f"setting_time={setting_time},"
-                f"prefix={prefix},{pf_color},"
-                f"alarm_params={alarm_params}"
-            )
+            f"setting_time={setting_time}, "
+            f"prefix={prefix}, "
+            f"msg='{msg}', "
+            f"alarm_params={alarm_params}"
         )
 
         self.setting_time = setting_time
-        self.prefix = prefix
-        self.pf_color = pf_color
+        self.prefix = prefix[0]
+        self.pf_color = prefix[1]
+        self.msg = msg
         self.alarm_params = alarm_params
 
     def main(self):
@@ -40,6 +42,7 @@ class BaseTimer:
         logger.debug("")
 
         t_start = time.time()
+
         with Progress() as progress:
             task = progress.add_task(
                 "", total=self.setting_time * self.SEC_MIN
@@ -48,8 +51,9 @@ class BaseTimer:
                 t_elapsed = time.time() - t_start
 
                 desc_str = (
-                    f"[{self.pf_color}]{self.prefix}[/{self.pf_color}]:"
-                    f"{t_elapsed:4.0f}/{self.setting_time * 60:.0f}:"
+                    f"{time.strftime(self.TIME_FMT)} "
+                    f"[{self.pf_color}]{self.prefix}[/{self.pf_color}] "
+                    f"{t_elapsed:.0f}/{self.setting_time * self.SEC_MIN:.0f}s:"
                 )
 
                 progress.update(
@@ -59,7 +63,14 @@ class BaseTimer:
                 time.sleep(0.1)
 
         self.ring()
-        click.pause("Press any key to stop alarm..")
+
+        if self.msg:
+            click.echo("Press any key to stop alarm ..", nl=False)
+
+        click.pause("")
+
+        if self.msg:
+            click.echo(f"\r{time.strftime(self.TIME_FMT)} Done.          ")
 
     def alarm(self, count, sec1, sec2):
         """Alarm."""
