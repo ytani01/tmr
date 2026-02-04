@@ -13,6 +13,10 @@
 
 ## == Usage
 
+### === 共通
+
+- **途中で止めたいとき**: [Ctrl]+[C]
+
 ```bash
 uv run tmr --help
 
@@ -32,17 +36,16 @@ Commands:
   timer     Simple Timer.
 ```
 
-### === timer
+### === subcommand: ``timer`` or ``t``
 
 ```bash
 uv run tmr timer --help
 
-Usage: tmr timer [OPTIONS]
+Usage: tmr timer [OPTIONS] MINUTES
 
   Simple Timer.
 
 Options:
-  -t, --setting-time FLOAT   setting time  [default: 3.0]
   -c, --alarm-count INTEGER  alarm count  [default: 999]
   --alarm-sec1, --s1 FLOAT   alarm sec1  [default: 0.5]
   --alarm-sec2, --s2 FLOAT   alarm sec2  [default: 1.5]
@@ -51,7 +54,7 @@ Options:
   -h, --help                 Show this message and exit.
 ```
 
-### === pomodoro
+### === subcommand: ``pomodoro`` or ``p``
 
 ```bash
 uv run tmr pomodoro --help

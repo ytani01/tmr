@@ -1,8 +1,9 @@
 [project]
 name = "tmr"
 dynamic = ["version"]
-description = "Add your description here"
+description = "CLI Pomodoro Timer"
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
     { name = "Yoichi Tanibayashi", email = "yoichi@tanibayashi.jp" }
 ]

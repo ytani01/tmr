@@ -22,19 +22,12 @@ def cli(ctx, debug):
 
 
 @click.command()
-@click.option(
-    "--setting-time",
-    "-t",
-    type=float,
-    default=3.0,
-    show_default=True,
-    help="setting time",
-)
+@click.argument("minutes", type=int, nargs=1)
 @click.option(
     "--alarm-count",
     "-c",
     type=int,
-    default=999,
+    default=BaseTimer.COUNT_MANY,
     show_default=True,
     help="alarm count",
 )
@@ -55,21 +48,21 @@ def cli(ctx, debug):
     help="alarm sec2",
 )
 @click_common_opts(__version__)
-def timer(ctx, setting_time, alarm_count, alarm_sec1, alarm_sec2, debug):
+def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     """Simple Timer."""
     logger.remove()
     logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))
 
     logger.debug(f"command='{ctx.command.name}'")
     logger.debug(
-        f"setting_time={setting_time},"
+        f"minutes={minutes},"
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
     )
 
     timer = None
     try:
         timer = BaseTimer(
-            setting_time,
+            minutes,
             prefix=("Timer", "blue"),
             msg="Press any key to stop .. ",
             alarm_params=(alarm_count, alarm_sec1, alarm_sec2),
