@@ -135,18 +135,14 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     try:
         while True:
             for _ in range(cycles - 1):
-                BaseTimer(
-                    work_time, prefix=(f"{'WORK':<10}", "green")
-                ).main()
+                BaseTimer(work_time, prefix=(f"{'WORK':<10}", "green")).main()
 
                 timer = BaseTimer(
                     break_time, prefix=(f"{'BREAK':<10}", "red")
                 )
                 timer.main()
 
-            timer = BaseTimer(
-                work_time, prefix=(f"{'WORK':<10}", "green")
-            )
+            timer = BaseTimer(work_time, prefix=(f"{'WORK':<10}", "green"))
             timer.main()
 
             timer = BaseTimer(

@@ -41,8 +41,8 @@ module = "click,loguru,loguru.*,rich,rich.*,pytest,pytest.*"
 ignore_missing_imports = true
 follow_untyped_imports = true
 
-[tool.pytest.ini_options]
-addopts = "-v --cov=tmr --cov-report=term-missing --cov-branch"
+# [tool.pytest.ini_options]
+# addopts = "-v --cov=tmr --cov-report=term-missing --cov-branch"
 
 [tool.basedpyright]
 typeCheckingMode = "standard" 

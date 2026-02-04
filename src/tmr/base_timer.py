@@ -83,7 +83,7 @@ class BaseTimer:
         for _ in range(count):
             if not self.alarm_active:
                 break
-            
+
             click.echo("\a", nl=False)
             time.sleep(sec1)
             click.echo("\a", nl=False)
