@@ -14,13 +14,14 @@ class BaseTimer:
 
     SEC_MIN = 60  # secs per minute
     TIME_FMT = "%m/%d %T"
+    TICK = 0.1  # sec
 
     def __init__(
         self,
         setting_time: float,
         *,
         prefix=("Timer", "green"),
-        msg: str = "",
+        msg: str = "Press any key ..",
         alarm_params=(3, 0.5, 1.5),
     ):
         """Constractor."""
@@ -62,21 +63,27 @@ class BaseTimer:
                     task, completed=t_elapsed, description=desc_str
                 )
 
-                time.sleep(0.1)
+                time.sleep(self.TICK)
 
         self.alarm_active = True
         self.ring()
 
         if self.msg:
-            click.echo("Press any key to stop alarm ..", nl=False)
+            click.echo(self.msg, nl=False)
 
         ch = click.getchar()
-        logger.debug(f"ch='{ch}'")
+        logger.debug(f"ch={ch.encode('utf-8')}")
+        if ch == '\x1b':
+            # [ESC] で、終了
+            raise KeyboardInterrupt
 
         self.alarm_active = False
 
         if self.msg:
-            click.echo(f"\r{time.strftime(self.TIME_FMT)} Done.          ")
+            click.echo(
+                f"\r{time.strftime(self.TIME_FMT)} Done.                    ",
+                nl=False
+            )
 
     def alarm(self, count, sec1, sec2):
         """Alarm."""
