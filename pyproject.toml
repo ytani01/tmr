@@ -1,0 +1,57 @@
+[project]
+name = "tmr"
+dynamic = ["version"]
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Yoichi Tanibayashi", email = "yoichi@tanibayashi.jp" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "click>=8.3.1",
+    "loguru>=0.7.3",
+    "rich>=14.3.2",
+]
+
+[project.scripts]
+tmr = "tmr.__main__:cli"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.37.3",
+    "mypy>=1.19.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.14",
+]
+
+[[tool.mypy.overrides]]
+  module = [
+    "click",
+    "click.*",
+    "pytest",
+  ]
+  ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-v --cov=tmr --cov-report=term-missing --cov-branch"
+
+[tool.basedpyright]
+typeCheckingMode = "standard" 
+reportMissingSuperCall = false
+reportPossiblyUnboundVariable = "none"
+reportMissingImports = "none"
+reportOptionalCall = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportDuplicateImport = "warning"
+reportUnreachable = "warning"
+reportDeprecated = "warning"
+useLibraryCodeForTypes = true

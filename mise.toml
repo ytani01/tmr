@@ -1,0 +1,98 @@
+[tasks.upgradeapt]
+description = "upgrade apt packages"
+run = '''
+echo "# upgrade apt packages"
+export LANG=C
+sudo apt update
+sudo apt upgrade
+sudo apt autoremove -y
+'''
+alias = "upapt"
+
+[tasks.upgrademise]
+description = "upgrade mise"
+run = '''
+echo "# upgrade mise"
+export LANG=C
+mise self-update
+mise up
+'''
+alias = "upmise"
+depends = ["upgradeapt"]
+
+[tasks.upgradeuv]
+description = "upgrade uv"
+run = '''
+echo "# upgrade uv"
+export LANG=C
+uv tool upgrade --all
+'''
+alias = "upuv"
+depends = ["upgrademise"]
+
+[tasks.upgradeproject]
+description = "upgrade in this project"
+run = '''
+# upgrade this project
+
+echo "# rm -f uv.lock"
+rm -f uv.lock
+echo "# uv sync"
+uv sync
+
+echo "# pip"
+uv pip install -U -e .
+uv pip install -U --group dev -e .
+# uv pip install -U --group samples -e .
+
+uv run tmr -V
+'''
+alias = "uppj"
+# depends = ["upgradeuv"]
+
+[tasks.lint]
+description = "linting"
+run = '''
+# format and linting
+
+echo "# ruff"
+uv run ruff format --line-length 78 src # tests samples
+uv run ruff check --fix --extend-select I  src # tests samples
+
+echo "# basedpyright"
+uv run basedpyright src # tests samples
+
+echo "# mypy"
+uv run mypy src # tests samples
+
+uv run tmr -V
+'''
+depends = ["upgradeproject"]
+
+[tasks.test]
+description = "test"
+run = '''
+uv run pytest tests
+
+uv run tmr -V
+'''
+depends = ["lint"]
+
+[tasks.build]
+description = "build"
+run = '''
+echo "# build"
+rm -rf dist
+uv build
+uv run tmr -V
+'''
+depends = ["test"]
+
+# [tasks.testpypi]
+# description = "Test PyPI"
+# run = '''
+# pwd
+# . ./.env
+# uv run twine upload --verbose --repository-url https://test.pypi.org/legacy/ dist/* -u __token__ -p ${TESTPYPI_PASSWD}
+# '''
+# depends = ["build"]
