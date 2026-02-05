@@ -1,6 +1,24 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+"""mylog.py
+
+# sample
+
+```python
+from .mylog import LOG_FMT, logLevel
+
+def main(debug: bool = False):
+    logger.remove()
+    logger.add(sys.stderr, format=LOG_FMT
+
+```
+"""
+
+import sys
+
+from loguru import logger
+
 LOG_FMT = (
     "<level>"
     "<white>{time:MM/DD HH:mm:ss}</white> "
@@ -12,6 +30,12 @@ LOG_FMT = (
 )
 
 
-def logLevel(debug=False) -> str:
+def logLevel(debug: bool = False) -> str:
     """Log level."""
     return "DEBUG" if debug else "INFO"
+
+
+def loggerInit(debug: bool = False) -> None:
+    """Initialize logger."""
+    logger.remove()
+    logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))  # pyright: ignore[reportUnusedCallResult]

@@ -1,135 +1,115 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-import threading
 import time
 
 import click
+from blessed import Terminal
 from loguru import logger
-from rich.progress import Progress
+
+from . import SEC_MIN
+from .progress_bar import ProgressBar
 
 
 class BaseTimer:
     """Base Timer."""
 
-    COUNT_MANY = 999
-    SEC_MIN = 60  # secs per minute
-    TIME_FMT = "%m/%d %T"
-    TICK = 0.1  # sec
-    CH_ESC = "\x1b"
-
-    def __init__(
-        self,
-        t_limit_min: float,
-        *,
-        prefix=("Timer", "green"),
-        msg: str = "Press any key ..",
-        alarm_params=(COUNT_MANY, 0.5, 1.5),
-    ):
+    def __init__(self, title: str, title_color: str, limit: float):
         """Constractor."""
-        logger.debug(
-            f"t_limit_min={t_limit_min}, "
-            f"prefix={prefix}, "
-            f"msg='{msg}', "
-            f"alarm_params={alarm_params}"
-        )
+        logger.debug(f"title={title},limit={limit}")
 
-        self.t_limit = t_limit_min * self.SEC_MIN  # sec
-        self.prefix = prefix[0]
-        self.pf_color = prefix[1]
-        self.msg = msg
-        self.alarm_params = alarm_params
+        self.title = title
+        self.title_color = title_color
+        self.limit = limit
 
-        self.alarm_active = True
+        self.pbar = ProgressBar(self.limit)
+
+        self.term = Terminal()
 
     def main(self):
         """Main."""
-        logger.debug("")
+        logger.debug("start.")
 
-        self.alarm_active = True
+        with self.term.cbreak():
+            t_start = time.monotonic()
+            t_elapsed = 0.0
+            t_remain = self.limit
+            is_active = True
+            is_paused = False
 
-        # プログレスバー生成
-        with Progress() as progress:
-            task = progress.add_task("", total=self.t_limit)
+            while is_active:
+                in_key = self.term.inkey(timeout=0.05)
+                key_name = ""
+                if in_key:
+                    if in_key.name:
+                        logger.debug(f"in_key={in_key.name}")
+                        key_name = in_key.name  # key_nameに統一
+                    else:
+                        logger.debug(f"in_key={in_key!r}")
+                        key_name = in_key  # key_nameに統一
 
-            try:
-                # start update loop
-                t_start = time.time()  # 開始時間
-                while not progress.finished:
-                    t_elapsed = time.time() - t_start  # 経過時間
-                    t_remain = self.t_limit - t_elapsed
-                    if t_remain < 0:
-                        t_remain = 0.0
+                    # key_name による、処理
+                    if key_name in ["q", "Q", "KEY_ESCAPE"]:
+                        logger.debug("Quit")
+                        # ここで break はしない
+                        is_active = False
+                        is_paused = False
 
-                    # 分、秒に分解
-                    t_e_min, t_e_sec = divmod(t_elapsed, self.SEC_MIN)
-                    t_r_min, t_r_sec = divmod(t_remain, self.SEC_MIN)
-                    t_l_min, t_l_sec = divmod(self.t_limit, self.SEC_MIN)
+                    if key_name in [" "]:
+                        if is_paused:
+                            is_paused = False
+                        else:
+                            is_paused = True
+                        logger.debug(f"is_paused={is_paused}")
 
-                    # プログレスバーの行頭の文字列
-                    desc_str = (
-                        f"{time.strftime(self.TIME_FMT)} "
-                        f"[{self.pf_color}]{self.prefix}[/{self.pf_color}] "
-                        f"{t_e_min:.0f}:{t_e_sec:02.0f}"
-                        f"(-{t_r_min:.0f}:{t_r_sec:02.0f})"
-                        f"/{t_l_min:.0f}:{t_l_sec:02.0f} "
-                    )
+                    if key_name in ["-", "_"]:
+                        t_cur = time.monotonic()
+                        t_start = min(t_start + 1.0, t_cur)
+                        t_elapsed = max(t_elapsed - 1.0, 0.0)
 
-                    progress.update(
-                        task, completed=t_elapsed, description=desc_str
-                    )
+                    if key_name in ["+", "="]:
+                        t_cur = time.monotonic()
+                        t_start = max(t_start - 1.0, t_cur - self.limit)
+                        t_elapsed = min(t_elapsed + 1.0, self.limit)
 
-                    time.sleep(self.TICK)
+                t_cur = time.monotonic()
 
-            except KeyboardInterrupt as e:
-                logger.debug(f"{type(e).__name__}")
-                self.alarm_active = False
+                if is_paused:
+                    # ポーズ中は、t_elapsed を固定
+                    # t_start を調整
+                    t_start = t_cur - t_elapsed
+                else:
+                    t_elapsed = min(t_cur - t_start, self.limit)
+                t_remain = max(self.limit - t_elapsed, 0)
 
-        self.ring_alarm()
+                limit_m, limit_s = divmod(self.limit, SEC_MIN)
+                elapsed_m, elapsed_s = divmod(t_elapsed, SEC_MIN)
+                remain_m, remain_s = divmod(t_remain, SEC_MIN)
 
-        if self.msg:
-            click.echo(self.msg, nl=False)
+                click.echo("\r", nl=False)
+                click.echo(f"{time.strftime('%m/%d %H:%M:%S')} ", nl=False)
+                click.secho(
+                    f"[{self.title}] ",
+                    fg=self.title_color,
+                    blink=is_paused,
+                    nl=False,
+                )
+                click.secho(
+                    (
+                        f"{elapsed_m:.0f}:{elapsed_s:02.0f}"
+                        f"(-{remain_m:.0f}:{remain_s:02.0f}) "
+                        f"/ {limit_m:.0f}:{limit_s:02.0f} "
+                        f"{t_elapsed / self.limit * 100:3.0f}% "
+                    ),
+                    blink=is_paused,
+                    nl=False,
+                )
 
-        # 入力待ち
-        ch = click.getchar()
-        # logger.debug(f"ch={ch.encode('utf-8')}")
-        logger.debug(f"ch={ch!r}")
+                self.pbar.display(t_elapsed)
 
-        if ch == self.CH_ESC:
-            # [ESC] で、終了
-            raise KeyboardInterrupt
+                if t_elapsed >= self.limit:
+                    if not is_paused:
+                        break
 
-        # サブスレッドのアラームを停止
-        self.alarm_active = False
-
-        if self.msg:
-            click.echo(
-                f"\r{time.strftime(self.TIME_FMT)} Done.                    ",
-                nl=False,
-            )
-
-    def alarm(self, count, sec1, sec2):
-        """Alarm thread function."""
-        logger.debug(f"count={count},sec1={sec1},sec2={sec2}")
-        for _ in range(count):
-            if not self.alarm_active:
-                logger.debug(f"alarm_active={self.alarm_active}")
-                break
-
-            click.echo("\a", nl=False)
-            time.sleep(sec1)
-            click.echo("\a", nl=False)
-            time.sleep(sec2)
-
-        self.alarm_active = True
-
-    def ring_alarm(self):
-        """Ring alarm.
-
-        make thread and start.
-        """
-        logger.debug(f"alarm_params={self.alarm_params}")
-
-        threading.Thread(
-            target=self.alarm, args=self.alarm_params, daemon=True
-        ).start()
+        click.echo()
+        logger.debug("done.")

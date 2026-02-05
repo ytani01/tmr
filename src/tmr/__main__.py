@@ -1,22 +1,23 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-import sys
-
 import click
 from loguru import logger
 
-from . import LOG_FMT, __version__, click_common_opts, logLevel
+from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
+from .click_utils import click_common_opts
+from .mylog import loggerInit
+
+CURSOR_ON = "\033[?25h"
+CURSOR_OFF = "\033[?25l"
 
 
 @click.group()
 @click_common_opts(__version__)
 def cli(ctx, debug):
     """Timer CLI."""
-    logger.remove()
-    logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))
-
+    loggerInit(debug)
     logger.debug(ctx)
     logger.debug(debug)
 
@@ -27,7 +28,7 @@ def cli(ctx, debug):
     "--alarm-count",
     "-c",
     type=int,
-    default=BaseTimer.COUNT_MANY,
+    default=999,
     show_default=True,
     help="alarm count",
 )
@@ -50,40 +51,35 @@ def cli(ctx, debug):
 @click_common_opts(__version__)
 def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     """Simple Timer."""
-    logger.remove()
-    logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))
-
+    loggerInit(debug)
     logger.debug(f"command='{ctx.command.name}'")
     logger.debug(
         f"minutes={minutes},"
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
     )
 
-    timer = None
+    limit = int(minutes * SEC_MIN)
     try:
-        timer = BaseTimer(
-            minutes,
-            prefix=("Timer", "blue"),
-            msg="Press any key to stop .. ",
-            alarm_params=(alarm_count, alarm_sec1, alarm_sec2),
-        )
-        timer.main()
+        click.echo(CURSOR_OFF, nl=False)
+        BaseTimer("Timer", "blue", limit).main()
 
     except KeyboardInterrupt as e:
         click.echo()
         logger.warning(type(e).__name__)
 
     except Exception as e:
+        click.echo()
         logger.error(f"{type(e).__name__}: {e}")
 
     finally:
-        click.echo("")
+        click.echo(CURSOR_ON, nl=False)
+        logger.debug("End.")
 
 
 cli.add_command(timer)
 cli.add_command(timer, name="t")
 
-
+'''
 @click.command()
 @click.option(
     "--work-time",
@@ -154,3 +150,4 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
 
 cli.add_command(pomodoro)
 cli.add_command(pomodoro, name="p")
+'''
