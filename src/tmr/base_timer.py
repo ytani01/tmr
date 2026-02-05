@@ -16,6 +16,7 @@ class BaseTimer:
     SEC_MIN = 60  # secs per minute
     TIME_FMT = "%m/%d %T"
     TICK = 0.1  # sec
+    CH_ESC = "\x1b"
 
     def __init__(
         self,
@@ -91,9 +92,10 @@ class BaseTimer:
 
         # 入力待ち
         ch = click.getchar()
-        logger.debug(f"ch={ch.encode('utf-8')}")
+        # logger.debug(f"ch={ch.encode('utf-8')}")
+        logger.debug(f"ch={ch!r}")
 
-        if ch == "\x1b":  # [ESC]
+        if ch == self.CH_ESC:
             # [ESC] で、終了
             raise KeyboardInterrupt
 
