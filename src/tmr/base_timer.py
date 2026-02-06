@@ -26,9 +26,8 @@ class BaseTimer:
 
     def __init__(
         self,
-        title: str,
-        title_color: str,
-        limit: float,
+        title: tuple[str, str] = ("Timer", "white"),
+        limit: float = 3.0,
         arlarm_params=(COUNT_MANY, 0.5, 1.5),
     ):
         """Constractor."""
@@ -36,8 +35,8 @@ class BaseTimer:
             f"title={title},limit={limit},alarm_param={arlarm_params}"
         )
 
-        self.title = title
-        self.title_color = title_color
+        self.title = title[0]
+        self.title_color = title[1]
         self.limit = limit
         self.alarm_params = arlarm_params
 
@@ -76,6 +75,7 @@ class BaseTimer:
                         # ここで break はしない
                         is_active = False
                         is_paused = False
+                        self.alarm_active = False
 
                     if key_name in self.KEYS["pause"]:
                         if is_paused:
@@ -109,12 +109,13 @@ class BaseTimer:
                 # 終了判定
                 if t_elapsed >= self.limit:
                     if not is_paused:
+                        self.alarm_active = True
                         break
 
         click.echo()
 
-        self.ring_alarm()  # アラーム
-        click.echo("Press any key to stop alarm..")
+        if self.ring_alarm():  # アラーム
+            click.echo("# Press any key to stop alarm..")
 
         with self.term.cbreak():
             while self.alarm_active:
@@ -126,7 +127,7 @@ class BaseTimer:
 
         logger.debug("done.")
 
-    def tmstr(self, sec: int | float) -> str:
+    def t_str(self, sec: int | float) -> str:
         """Time string.
 
         sec -> "mm:ss"
@@ -145,21 +146,22 @@ class BaseTimer:
 
         click.echo("\r", nl=False)
         click.echo(f"{time.strftime('%m/%d %H:%M:%S')} ", nl=False)
-        click.secho(f"[{self.title}] ", fg=self.title_color, nl=False)
-        click.secho(self.tmstr(self.limit), bold=True, nl=False)
+        click.secho(f"{self.title} ", fg=self.title_color, nl=False)
+        click.secho(self.t_str(self.limit), bold=True, nl=False)
         click.echo("=", nl=False)
-        click.secho(self.tmstr(t_elapsed), blink=is_paused, nl=False)
+        click.secho(self.t_str(t_elapsed), blink=is_paused, nl=False)
         click.echo("+", nl=False)
-        click.secho(self.tmstr(t_remain), blink=is_paused, nl=False)
+        click.secho(self.t_str(t_remain), blink=is_paused, nl=False)
         click.echo(" ", nl=False)
         click.secho(f"{t_rate:3.0f}%", blink=is_paused, nl=False)
         click.echo(" ", nl=False)
 
         self.pbar.display(t_elapsed)
 
-    def alarm(self, count, sec1, sec2):
+    def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""
         logger.debug(f"count={count},sec1={sec1},sec2={sec2}")
+
         for _ in range(count):
             if not self.alarm_active:
                 logger.debug(f"alarm_active={self.alarm_active}")
@@ -172,14 +174,17 @@ class BaseTimer:
 
         self.alarm_active = False
 
-    def ring_alarm(self):
+    def ring_alarm(self) -> bool:
         """Ring alarm.
 
         make thread and start.
         """
         logger.debug(f"alarm_params={self.alarm_params}")
 
-        self.alarm_active = True
+        if not self.alarm_active:
+            return False
+
         threading.Thread(
-            target=self.alarm, args=self.alarm_params, daemon=True
+            target=self.thr_alarm, args=self.alarm_params, daemon=True
         ).start()
+        return True

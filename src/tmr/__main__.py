@@ -61,7 +61,9 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     limit = int(minutes * SEC_MIN)
     try:
         click.echo(CURSOR_OFF, nl=False)
-        BaseTimer("Timer", "blue", limit).main()
+        BaseTimer(
+            ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
+        ).main()
 
     except KeyboardInterrupt as e:
         click.echo()
@@ -79,7 +81,7 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
 cli.add_command(timer)
 cli.add_command(timer, name="t")
 
-'''
+
 @click.command()
 @click.option(
     "--work-time",
@@ -111,9 +113,7 @@ cli.add_command(timer, name="t")
 @click_common_opts(__version__)
 def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     """Pomodoro Timer."""
-    logger.remove()
-    logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))
-
+    loggerInit(debug)
     logger.debug(f"command='{ctx.command.name}'")
     logger.debug(
         (
@@ -124,19 +124,23 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         )
     )
 
-    PRE_WORK = ("WORK", "green")
-    PRE_BREAK = ("BREAK", "red")
-    PRE_LBREAK = ("LONG_BREAK", "red")
+    work_sec = work_time * SEC_MIN
+    break_sec = break_time * SEC_MIN
+    long_break_sec = long_break_time * SEC_MIN
 
-    msg = "Press any key to next (ESC to end)"
+    title_work = ("WORK", "green")
+    title_break = ("BREAK", "red")
+    title_lbreak = ("LONG_BREAK", "red")
+
     try:
+        click.echo(CURSOR_OFF, nl=False)
         while True:
             for _ in range(cycles - 1):
-                BaseTimer(work_time, prefix=PRE_WORK, msg=msg).main()
-                BaseTimer(break_time, prefix=PRE_BREAK, msg=msg).main()
+                BaseTimer(title_work, work_sec).main()
+                BaseTimer(title_break, break_sec).main()
 
-            BaseTimer(work_time, prefix=PRE_WORK, msg=msg).main()
-            BaseTimer(long_break_time, prefix=PRE_LBREAK, msg=msg).main()
+            BaseTimer(title_work, work_sec).main()
+            BaseTimer(title_lbreak, long_break_sec).main()
 
     except KeyboardInterrupt:
         click.echo("")
@@ -145,9 +149,9 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         logger.error(f"{type(e).__name__}: {e}")
 
     finally:
+        click.echo(CURSOR_ON, nl=False)
         click.echo("End.")
 
 
 cli.add_command(pomodoro)
 cli.add_command(pomodoro, name="p")
-'''
