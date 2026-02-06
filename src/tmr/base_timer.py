@@ -15,7 +15,7 @@ from .progress_bar import ProgressBar
 class BaseTimer:
     """Base Timer."""
 
-    IN_KEY_TIMEOUT = 0.05  # sec
+    IN_KEY_TIMEOUT = 0.1  # sec
 
     DEF_TITLE = ("Timer", "white")
     DEF_LIMIT = 180.0  # seconds
@@ -140,12 +140,12 @@ class BaseTimer:
 
         click.echo()
 
-        if self.ring_alarm():  # アラーム
+        if self.ring_alarm():  # アラーム alarm_active によっては鳴らない
             click.echo(" Press any key to stop alarm..")
 
         with self.term.cbreak():
             while self.alarm_active:
-                in_key = self.term.inkey(timeout=0.05)
+                in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
                 if not in_key:
                     continue
                 logger.debug(f"in_key={in_key}")
