@@ -38,7 +38,7 @@ python_version = "3.13"
 check_untyped_defs = true
 
 [[tool.mypy.overrides]]
-module = "click,loguru,loguru.*,rich,rich.*,pytest,pytest.*"
+module = "click,loguru,loguru.*,pytest,pytest.*"
 ignore_missing_imports = true
 follow_untyped_imports = true
 
