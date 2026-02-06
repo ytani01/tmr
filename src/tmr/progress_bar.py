@@ -4,6 +4,8 @@
 import click
 from loguru import logger
 
+from . import SEQ_EL0
+
 
 class ProgressBar:
     """Progress Bar."""
@@ -29,18 +31,17 @@ class ProgressBar:
 
         self.val: float = 0.0
 
-    def display(self, val: float | None = None):
+    def display(self, val: float | None = None, bar_len: int = 0):
         """Display."""
         if val is not None:
             self.val = val
+        if bar_len <= 0:
+            bar_len = self.bar_len
 
-        on_len: int = min(
-            int(self.val / self.total * self.bar_len), self.bar_len
+        on_len: int = min(round(self.val / self.total * bar_len), bar_len)
+        off_len = bar_len - on_len
+
+        click.echo(
+            f"{SEQ_EL0}{self.ch_on * on_len}{self.ch_off * off_len}\r",
+            nl=False,
         )
-        off_len = self.bar_len - on_len
-
-        for _ in range(on_len):
-            click.echo(self.ch_on, nl=False)
-        for _ in range(off_len):
-            click.echo(self.ch_off, nl=False)
-        click.echo("\r", nl=False)

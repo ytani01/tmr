@@ -4,13 +4,10 @@
 import click
 from loguru import logger
 
-from . import SEC_MIN, __version__
+from . import SEC_MIN, SEQ_CURSOR_OFF, SEQ_CURSOR_ON, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
 from .mylog import loggerInit
-
-CURSOR_ON = "\033[?25h"
-CURSOR_OFF = "\033[?25l"
 
 
 @click.group()
@@ -60,7 +57,7 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
 
     limit = int(minutes * SEC_MIN)
     try:
-        click.echo(CURSOR_OFF, nl=False)
+        click.echo(SEQ_CURSOR_OFF, nl=False)
         BaseTimer(
             ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
         ).main()
@@ -74,7 +71,7 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
         logger.error(f"{type(e).__name__}: {e}")
 
     finally:
-        click.echo(CURSOR_ON, nl=False)
+        click.echo(SEQ_CURSOR_ON, nl=False)
         logger.debug("End.")
 
 
@@ -133,7 +130,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     title_lbreak = ("LONG_BREAK", "red")
 
     try:
-        click.echo(CURSOR_OFF, nl=False)
+        click.echo(SEQ_CURSOR_OFF, nl=False)
         while True:
             for _ in range(cycles - 1):
                 BaseTimer(title_work, work_sec).main()
@@ -149,7 +146,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         logger.error(f"{type(e).__name__}: {e}")
 
     finally:
-        click.echo(CURSOR_ON, nl=False)
+        click.echo(SEQ_CURSOR_ON, nl=False)
         click.echo("End.")
 
 

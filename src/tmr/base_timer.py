@@ -20,6 +20,8 @@ class BaseTimer:
         "pause": [" ", "KEY_ENTER"],
         "forward": ["+", "=", "KEY_RIGHT", "KEY_DOWN"],
         "backward": ["-", "_", "KEY_LEFT", "KEY_UP"],
+        "forward10": ["KEY_PGDOWN"],
+        "backward10": ["KEY_PGUP"],
     }
 
     COUNT_MANY = 999
@@ -40,18 +42,20 @@ class BaseTimer:
         self.limit = limit
         self.alarm_params = arlarm_params
 
+        self.t_start = 0.0
         self.alarm_active = False
 
         self.pbar = ProgressBar(self.limit)
 
         self.term = Terminal()
+        logger.debug(f"term.width={self.term.width}")
 
     def main(self):
         """Main."""
         logger.debug("start.")
 
         with self.term.cbreak():
-            t_start = time.monotonic()
+            self.t_start = time.monotonic()
             t_elapsed = 0.0
 
             is_active = True
@@ -86,31 +90,45 @@ class BaseTimer:
 
                     if key_name in self.KEYS["forward"]:
                         t_cur = time.monotonic()
-                        t_start = max(t_start - 1.0, t_cur - self.limit)
-                        t_elapsed = min(t_elapsed + 1.0, self.limit)
+                        self.t_start = max(
+                            self.t_start - 1.0, t_cur - self.limit
+                        )
+                        t_elapsed = t_cur - self.t_start
 
                     if key_name in self.KEYS["backward"]:
                         t_cur = time.monotonic()
-                        t_start = min(t_start + 1.0, t_cur)
-                        t_elapsed = max(t_elapsed - 1.0, 0.0)
+                        self.t_start = min(self.t_start + 1.0, t_cur)
+                        t_elapsed = t_cur - self.t_start
+
+                    if key_name in self.KEYS["forward10"]:
+                        t_cur = time.monotonic()
+                        self.t_start = max(
+                            self.t_start - 10.0, t_cur - self.limit
+                        )
+                        t_elapsed = t_cur - self.t_start
+
+                    if key_name in self.KEYS["backward10"]:
+                        t_cur = time.monotonic()
+                        self.t_start = min(self.t_start + 10.0, t_cur)
+                        t_elapsed = t_cur - self.t_start
 
                 # 時間経過
                 t_cur = time.monotonic()
 
                 if is_paused:
                     # ポーズ中は、t_elapsed を固定
-                    # t_start を調整
-                    t_start = t_cur - t_elapsed
+                    # self.t_start を調整
+                    self.t_start = t_cur - t_elapsed
                 else:
-                    t_elapsed = min(t_cur - t_start, self.limit)
+                    t_elapsed = min(t_cur - self.t_start, self.limit)
 
                 self.display(t_elapsed, is_paused)
 
                 # 終了判定
                 if t_elapsed >= self.limit:
                     if not is_paused:
+                        is_active = False
                         self.alarm_active = True
-                        break
 
         click.echo()
 
@@ -141,8 +159,12 @@ class BaseTimer:
 
     def display(self, t_elapsed: float, is_paused: bool):
         """Display."""
+        logger.debug(f"t_elapsed={t_elapsed},is_paused={is_paused}")
+
         t_remain = max(self.limit - t_elapsed, 0)
         t_rate = t_elapsed / self.limit * 100
+        # パーセント表示で、通常は小数点1位まで、100%だけ "100%" にしたい
+        t_rate_str = "100" if (p := round(t_rate, 1)) == 100 else f"{p:.1f}"
 
         click.echo("\r", nl=False)
         click.echo(f"{time.strftime('%m/%d %H:%M:%S')} ", nl=False)
@@ -153,7 +175,7 @@ class BaseTimer:
         click.echo("+", nl=False)
         click.secho(self.t_str(t_remain), blink=is_paused, nl=False)
         click.echo(" ", nl=False)
-        click.secho(f"{t_rate:3.0f}%", blink=is_paused, nl=False)
+        click.secho(f"{t_rate_str}%", blink=is_paused, nl=False)
         click.echo(" ", nl=False)
 
         self.pbar.display(t_elapsed)
