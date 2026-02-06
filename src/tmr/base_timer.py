@@ -15,40 +15,83 @@ from .progress_bar import ProgressBar
 class BaseTimer:
     """Base Timer."""
 
-    KEYS = {
-        "quit": ["q", "Q", "KEY_ESCAPE"],
-        "pause": [" ", "KEY_ENTER"],
-        "forward": ["+", "=", "KEY_RIGHT", "KEY_DOWN"],
-        "backward": ["-", "_", "KEY_LEFT", "KEY_UP"],
-        "forward10": ["KEY_PGDOWN"],
-        "backward10": ["KEY_PGUP"],
-    }
+    IN_KEY_TIMEOUT = 0.05  # sec
 
+    DEF_TITLE = ("Timer", "white")
+    DEF_LIMIT = 180.0  # seconds
     COUNT_MANY = 999
+    DEF_SEC1 = 0.5
+    DEF_SEC2 = 1.5
 
     def __init__(
         self,
-        title: tuple[str, str] = ("Timer", "white"),
-        limit: float = 3.0,
-        arlarm_params=(COUNT_MANY, 0.5, 1.5),
+        title: tuple[str, str] = DEF_TITLE,
+        t_limit: float = DEF_LIMIT,
+        arlarm_params=(COUNT_MANY, DEF_SEC1, DEF_SEC2),
     ):
         """Constractor."""
         logger.debug(
-            f"title={title},limit={limit},alarm_param={arlarm_params}"
+            f"title={title},limit={t_limit},alarm_param={arlarm_params}"
         )
 
         self.title = title[0]
         self.title_color = title[1]
-        self.limit = limit
+        self.t_limit = t_limit
         self.alarm_params = arlarm_params
 
         self.t_start = 0.0
+        self.t_elapsed = 0.0
+
+        self.is_active = False
+        self.is_paused = False
         self.alarm_active = False
 
-        self.pbar = ProgressBar(self.limit)
+        self.pbar = ProgressBar(self.t_limit)
 
         self.term = Terminal()
         logger.debug(f"term.width={self.term.width}")
+
+        self.CMD: list = [
+            {"keys": ["q", "Q", "KEY_ESCAPE"], "fn": self.fn_quit},
+            {"keys": [" ", "KEY_ENTER"], "fn": self.fn_pause},
+            {
+                "keys": ["+", "=", "KEY_RIGHT", "KEY_DOWN"],
+                "fn": lambda: self.fn_forward(1.0),
+            },
+            {
+                "keys": ["-", "_", "KEY_LEFT", "KEY_UP"],
+                "fn": lambda: self.fn_backward(1.0),
+            },
+            {"keys": ["KEY_PGDOWN"], "fn": lambda: self.fn_forward(10.0)},
+            {"keys": ["KEY_PGUP"], "fn": lambda: self.fn_backward(10.0)},
+        ]
+
+        # self.CMD を {key, fn} の形式に展開する。
+        # fn = self.key_map["key_name"] となる。
+        self.key_map = {
+            k: item["fn"] for item in self.CMD for k in item["keys"]
+        }
+
+    def fn_quit(self):
+        logger.debug("")
+        self.is_active = False
+        self.is_paused = False
+        self.alarm_active = False
+
+    def fn_pause(self):
+        self.is_paused = not self.is_paused
+        logger.debug(f"is_paused={self.is_paused}")
+
+    def fn_forward(self, sec: float = 1.0):
+        logger.debug(f"sec={sec}")
+        t_cur = time.monotonic()
+        self.t_start = max(self.t_start - sec, t_cur - self.t_limit)
+        self.t_elapsed = t_cur - self.t_start
+
+    def fn_backward(self, sec: float = 1.0):
+        t_cur = time.monotonic()
+        self.t_start = min(self.t_start + sec, t_cur)
+        self.t_elapsed = t_cur - self.t_start
 
     def main(self):
         """Main."""
@@ -56,16 +99,17 @@ class BaseTimer:
 
         with self.term.cbreak():
             self.t_start = time.monotonic()
-            t_elapsed = 0.0
+            self.t_elapsed = 0.0
 
-            is_active = True
-            is_paused = False
+            self.is_active = True
+            self.is_paused = False
 
-            while is_active:
+            while self.is_active:
                 # キー入力
-                in_key = self.term.inkey(timeout=0.05)
+                in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
                 key_name = ""
                 if in_key:
+                    # key_name に統一
                     if in_key.name:
                         logger.debug(f"in_key={in_key.name}")
                         key_name = in_key.name  # key_nameに統一
@@ -73,67 +117,31 @@ class BaseTimer:
                         logger.debug(f"in_key={in_key!r}")
                         key_name = in_key  # key_nameに統一
 
-                    # key_name による、処理
-                    if key_name in self.KEYS["quit"]:
-                        logger.debug("Quit")
-                        # ここで break はしない
-                        is_active = False
-                        is_paused = False
-                        self.alarm_active = False
-
-                    if key_name in self.KEYS["pause"]:
-                        if is_paused:
-                            is_paused = False
-                        else:
-                            is_paused = True
-                        logger.debug(f"is_paused={is_paused}")
-
-                    if key_name in self.KEYS["forward"]:
-                        t_cur = time.monotonic()
-                        self.t_start = max(
-                            self.t_start - 1.0, t_cur - self.limit
-                        )
-                        t_elapsed = t_cur - self.t_start
-
-                    if key_name in self.KEYS["backward"]:
-                        t_cur = time.monotonic()
-                        self.t_start = min(self.t_start + 1.0, t_cur)
-                        t_elapsed = t_cur - self.t_start
-
-                    if key_name in self.KEYS["forward10"]:
-                        t_cur = time.monotonic()
-                        self.t_start = max(
-                            self.t_start - 10.0, t_cur - self.limit
-                        )
-                        t_elapsed = t_cur - self.t_start
-
-                    if key_name in self.KEYS["backward10"]:
-                        t_cur = time.monotonic()
-                        self.t_start = min(self.t_start + 10.0, t_cur)
-                        t_elapsed = t_cur - self.t_start
+                    # キーマップに登録されているメソッドを呼び出す
+                    if key_name in self.key_map:
+                        self.key_map[key_name]()
 
                 # 時間経過
                 t_cur = time.monotonic()
 
-                if is_paused:
-                    # ポーズ中は、t_elapsed を固定
-                    # self.t_start を調整
-                    self.t_start = t_cur - t_elapsed
+                if self.is_paused:
+                    # ポーズ中は、self.t_elapsed を固定し、self.t_start を調整
+                    self.t_start = t_cur - self.t_elapsed
                 else:
-                    t_elapsed = min(t_cur - self.t_start, self.limit)
+                    self.t_elapsed = min(t_cur - self.t_start, self.t_limit)
 
-                self.display(t_elapsed, is_paused)
+                self.display(self.t_elapsed, self.is_paused)
 
                 # 終了判定
-                if t_elapsed >= self.limit:
-                    if not is_paused:
-                        is_active = False
+                if self.t_elapsed >= self.t_limit:
+                    if not self.is_paused:
+                        self.is_active = False
                         self.alarm_active = True
 
         click.echo()
 
         if self.ring_alarm():  # アラーム
-            click.echo("# Press any key to stop alarm..")
+            click.echo(" Press any key to stop alarm..")
 
         with self.term.cbreak():
             while self.alarm_active:
@@ -159,17 +167,17 @@ class BaseTimer:
 
     def display(self, t_elapsed: float, is_paused: bool):
         """Display."""
-        logger.debug(f"t_elapsed={t_elapsed},is_paused={is_paused}")
+        # logger.debug(f"t_elapsed={t_elapsed},is_paused={is_paused}")
 
-        t_remain = max(self.limit - t_elapsed, 0)
-        t_rate = t_elapsed / self.limit * 100
-        # パーセント表示で、通常は小数点1位まで、100%だけ "100%" にしたい
-        t_rate_str = "100" if (p := round(t_rate, 1)) == 100 else f"{p:.1f}"
+        t_remain = max(self.t_limit - t_elapsed, 0)
+        t_rate = t_elapsed / self.t_limit * 100
+        # パーセント表示で、通常は小数点2位まで、100%だけ "100%" にしたい
+        t_rate_str = "100" if (p := round(t_rate, 2)) == 100 else f"{p:.2f}"
 
         click.echo("\r", nl=False)
         click.echo(f"{time.strftime('%m/%d %H:%M:%S')} ", nl=False)
         click.secho(f"{self.title} ", fg=self.title_color, nl=False)
-        click.secho(self.t_str(self.limit), bold=True, nl=False)
+        click.secho(self.t_str(self.t_limit), bold=True, nl=False)
         click.echo("=", nl=False)
         click.secho(self.t_str(t_elapsed), blink=is_paused, nl=False)
         click.echo("+", nl=False)
