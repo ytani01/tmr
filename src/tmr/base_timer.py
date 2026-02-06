@@ -1,14 +1,14 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-import time
 import threading
+import time
 
 import click
 from blessed import Terminal
 from loguru import logger
 
-from . import SEC_MIN, MIN_HOUR
+from . import MIN_HOUR, SEC_MIN
 from .progress_bar import ProgressBar
 
 
@@ -29,7 +29,7 @@ class BaseTimer:
         title: str,
         title_color: str,
         limit: float,
-        arlarm_params=(COUNT_MANY, 0.5, 1.5)
+        arlarm_params=(COUNT_MANY, 0.5, 1.5),
     ):
         """Constractor."""
         logger.debug(
@@ -42,7 +42,7 @@ class BaseTimer:
         self.alarm_params = arlarm_params
 
         self.alarm_active = False
-        
+
         self.pbar = ProgressBar(self.limit)
 
         self.term = Terminal()
