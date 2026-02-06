@@ -17,8 +17,8 @@ SEC_MIN = 60
 MIN_HOUR = 60
 
 CH_ESC = "\x1b"  # == \033
-SEQ_CURSOR_ON = f"{CH_ESC}[?25h"
-SEQ_CURSOR_OFF = f"{CH_ESC}[?25l"
+SEQ_CSR_ON = f"{CH_ESC}[?25h"  # Visible cursor
+SEQ_CSR_OFF = f"{CH_ESC}[?25l"  # Invisible cursor
 SEQ_EL0 = f"{CH_ESC}[0K"  # Erase in line: カーソルから行末まで削除
 
 
