@@ -14,6 +14,7 @@ else:
     __version__ = "_._._"
 
 SEC_MIN = 60
+MIN_HOUR = 60
 
 __all__ = [
     "__version__",

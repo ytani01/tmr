@@ -11,7 +11,7 @@ class ProgressBar:
     DEF_BAR_LEN: int = 25  # chars
 
     DEF_CH_ON: str = ">"
-    DEF_CH_OFF: str = " "
+    DEF_CH_OFF: str = "-"
 
     def __init__(
         self,
@@ -39,9 +39,8 @@ class ProgressBar:
         )
         off_len = self.bar_len - on_len
 
-        click.echo("|", nl=False)
         for _ in range(on_len):
             click.echo(self.ch_on, nl=False)
         for _ in range(off_len):
             click.echo(self.ch_off, nl=False)
-        click.echo("|\r", nl=False)
+        click.echo("\r", nl=False)
