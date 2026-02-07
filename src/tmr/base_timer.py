@@ -15,7 +15,7 @@ from .progress_bar import ProgressBar
 class BaseTimer:
     """Base Timer."""
 
-    IN_KEY_TIMEOUT = 0.1  # sec
+    IN_KEY_TIMEOUT = 0.2  # sec
 
     DEF_TITLE = ("Timer", "white")
     DEF_LIMIT = 180.0  # seconds
@@ -185,7 +185,7 @@ class BaseTimer:
     def t_str(self, sec: int | float) -> str:
         """Time string.
 
-        sec -> "mm:ss"
+        sec -> "M:SS"
         """
         m, s = divmod(sec, SEC_MIN)
         if m < MIN_HOUR:

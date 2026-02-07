@@ -15,9 +15,11 @@ A command-line Pomodoro timer application.
 ## Codebase Structure
 - `src/tmr/`: Main package.
     - `__main__.py`: Entrypoint for the CLI.
-    - `app.py`: Main application logic.
+    - `base_timer.py`: Core timer logic and TUI control.
+    - `progress_bar.py`: Progress bar and spinner display.
     - `click_utils.py`: CLI utilities.
     - `mylog.py`: Logging setup.
+    - `__init__.py`: Constants and version information.
 - `tests/`: Unit and integration tests.
 - `pyproject.toml`: Project metadata and dependencies.
 - `mise.toml`: Task definitions for development.
