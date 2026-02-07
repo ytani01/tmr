@@ -1,4 +1,4 @@
-# tmr -- CLIタイマー、ポモドーロタイマー
+# tmr -- CLI simple and Pomodoro timer
 
 ターミナル上で動作する、効率的でカスタマイズ可能なタイマーです。
 単純なタイマー機能と、ポモドーロ・タイマー機能があります。
@@ -11,11 +11,41 @@
 - **カスタマイズ可能**: 作業時間、休憩時間、サイクル数を自由に変更できます。
 
 
+## == Requirement
+
+- mise: 開発用パッケージ管理
+- uv: Pythonプロジェクト管理
+
+
+## == Install
+
+```bash
+git clone https://github.com/ytani01/tmr.git
+cd tmr
+
+mise trust
+mise run build
+
+uv tool install -U .
+```
+
+
 ## == Usage
 
 ### === 共通
 
-- **途中で止めたいとき**: [Ctrl]+[C]
+ポモドーロタイマーでは、quitすると次のフェーズに移ります。
+ポモドーロタイマーを終了する場合は、強制終了してください。
+
+- **quit**: [q], [ESC]
+- **強制終了**: [Ctrl]+[C]
+- **pause**: [p], [SPACE], [ENTER]
+- **forward 1 second**: "+", [RIGHT], [Ctrl]+[F]
+- **forward 10 seconds**: [DOWN], [Ctrl]+[N]
+- **backward 1 second**: "-", [LEFT], [Ctrl]+[B]
+- **backwawrd 10 seconds**: [UP], [Ctrl]+[P]
+- **clear terminal**: [Ctrl]+[L]
+
 
 ```bash
 uv run tmr --help
