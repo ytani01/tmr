@@ -50,7 +50,7 @@ class ProgressBar:
             bar_len = self.bar_len
 
         rate = self.val / self.total if self.total > 0 else 1.0
-        on_len: int = min(round(rate * bar_len), bar_len)
+        on_len: int = max(0, min(round(rate * bar_len), bar_len))
         off_len = bar_len - on_len
 
         str_on = str_off = str_cur = ""
