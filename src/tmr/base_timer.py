@@ -51,7 +51,7 @@ class BaseTimer:
         self.term = Terminal()
         logger.debug(f"term size:{self.term.width}x{self.term.height}")
 
-        self.CMD: list = [
+        self.cmd: list = [
             {
                 "info": "pause timer.",
                 "keys": [" ", "KEY_ENTER"],
@@ -89,10 +89,10 @@ class BaseTimer:
             },
         ]
 
-        # self.CMD を {"key": fn} の形式に展開する。
+        # self.cmd を {"key": fn} の形式に展開する。
         # fn = self.key_map["key"] となる。
         self.key_map = {
-            k: item["fn"] for item in self.CMD for k in item["keys"]
+            k: item["fn"] for item in self.cmd for k in item["keys"]
         }
 
     def main(self):
