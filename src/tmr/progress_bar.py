@@ -4,8 +4,6 @@
 import click
 from loguru import logger
 
-from . import ESQ_EL0
-
 
 class ProgressBar:
     """Progress Bar."""
@@ -34,22 +32,21 @@ class ProgressBar:
 
         self.ch_head_i = 0
 
-        self.val: float = 0.0
-
     def get_str(
         self,
-        val: float | None = None,
+        val: float,
         *,
-        bar_len: int = 0,
+        bar_len: int | None = None,
         stop: bool = False,
     ) -> str:
         """Display."""
-        if val is not None:
-            self.val = val
-        if bar_len <= 0:
+        if bar_len is None:
             bar_len = self.bar_len
 
-        rate = self.val / self.total if self.total > 0 else 1.0
+        if bar_len <= 0:
+            return ""
+
+        rate = val / self.total if self.total > 0 else 1.0
         on_len: int = max(0, min(round(rate * bar_len), bar_len))
         off_len = bar_len - on_len
 
@@ -57,7 +54,7 @@ class ProgressBar:
 
         # 風車
         if on_len >= 1:
-            if self.val >= self.total or stop:
+            if val >= self.total or stop:
                 str_cur = self.ch_on
             else:
                 str_cur = self.ch_head[self.ch_head_i]
@@ -69,11 +66,11 @@ class ProgressBar:
         if off_len > 0:
             str_off = self.ch_off * off_len
 
-        return f"{ESQ_EL0}{str_on}{str_cur}{str_off}"
+        return f"{str_on}{str_cur}{str_off}"
 
     def display(
         self,
-        val: float | None = None,
+        val: float,
         *,
         bar_len: int = 0,
         stop: bool = False,

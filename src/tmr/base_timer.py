@@ -8,7 +8,7 @@ import click
 from blessed import Terminal
 from loguru import logger
 
-from . import MIN_HOUR, SEC_MIN
+from . import ESQ_EL0, MIN_HOUR, SEC_MIN
 from .progress_bar import ProgressBar
 
 
@@ -51,7 +51,17 @@ class BaseTimer:
         self.term = Terminal()
         logger.debug(f"term size:{self.term.width}x{self.term.height}")
 
-        self.cmd: list = [
+        self.cmd: list = self.cmd_list()
+
+        # self.cmd を {"key": fn} の形式に展開する。
+        # fn = self.key_map["key"] となる。
+        self.key_map = {
+            k: item["fn"] for item in self.cmd for k in item["keys"]
+        }
+
+    def cmd_list(self) -> list:
+        """Get command list."""
+        return [
             {
                 "info": "pause timer.",
                 "keys": [" ", "KEY_ENTER"],
@@ -88,12 +98,6 @@ class BaseTimer:
                 "fn": self.fn_quit,
             },
         ]
-
-        # self.cmd を {"key": fn} の形式に展開する。
-        # fn = self.key_map["key"] となる。
-        self.key_map = {
-            k: item["fn"] for item in self.cmd for k in item["keys"]
-        }
 
     def main(self):
         """Main."""
@@ -218,13 +222,13 @@ class BaseTimer:
 
         # プログレスバーの長さを求める
         str_list = [
-            self.title,
-            str_date,
-            str_limit,
-            str_elapsed,
             str_remain,
-            str_rate,
+            str_limit,
+            self.title,
+            str_elapsed,
             str_state,
+            str_date,
+            str_rate,
         ]
         all_str_len = sum([len(s) for s in str_list])
         sbar_len = self.term.width - all_str_len - len(str_list) - 1
@@ -258,7 +262,7 @@ class BaseTimer:
         )
 
         # 表示
-        click.echo(str_disp, nl=False)
+        click.echo(f"{ESQ_EL0}{str_disp}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""
