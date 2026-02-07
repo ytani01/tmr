@@ -13,17 +13,22 @@ if __package__:
 else:
     __version__ = "_._._"
 
-SEC_MIN = 60
-MIN_HOUR = 60
+SEC_MIN = 60  # seconds per minute
+MIN_HOUR = 60  # minutes per hour
 
-ESC = "\x1b"  # == \033
-SEQ_CSR_ON = f"{ESC}[?25h"  # Visible cursor
-SEQ_CSR_OFF = f"{ESC}[?25l"  # Invisible cursor
-SEQ_EL0 = f"{ESC}[0K"  # Erase in line: カーソルから行末まで削除
+ESC = "\x1b"  # == \033, Escape
+ESQ_CSR_ON = f"{ESC}[?25h"  # Visible cursor
+ESQ_CSR_OFF = f"{ESC}[?25l"  # Invisible cursor
+ESQ_EL0 = f"{ESC}[0K"  # Erase in line: カーソルから行末まで削除
 
 
 __all__ = [
     "__version__",
     "logger",
     "SEC_MIN",
+    "MIN_HOUR",
+    "ESC",
+    "ESQ_CSR_ON",
+    "ESQ_CSR_OFF",
+    "ESQ_EL0",
 ]

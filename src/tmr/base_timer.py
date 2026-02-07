@@ -49,10 +49,9 @@ class BaseTimer:
         self.pbar = ProgressBar(self.t_limit)
 
         self.term = Terminal()
-        logger.debug(f"term.width={self.term.width}")
+        logger.debug(f"term size:{self.term.width}x{self.term.height}")
 
         self.CMD: list = [
-            {"keys": ["q", "Q", "KEY_ESCAPE"], "fn": self.fn_quit},
             {"keys": [" ", "KEY_ENTER"], "fn": self.fn_pause},
             {
                 "keys": ["+", "=", "KEY_RIGHT", "KEY_DOWN"],
@@ -64,6 +63,8 @@ class BaseTimer:
             },
             {"keys": ["KEY_PGDOWN"], "fn": lambda: self.fn_forward(10.0)},
             {"keys": ["KEY_PGUP"], "fn": lambda: self.fn_backward(10.0)},
+            {"keys": ["KEY_CTRL_L"], "fn": click.clear},
+            {"keys": ["q", "Q", "KEY_ESCAPE"], "fn": self.fn_quit},
         ]
 
         # self.CMD を {key, fn} の形式に展開する。
@@ -93,6 +94,20 @@ class BaseTimer:
         self.t_start = min(self.t_start + sec, t_cur)
         self.t_elapsed = t_cur - self.t_start
 
+    def get_key_name(self) -> str:
+        """Get key name."""
+        in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
+        key_name = ""
+        if in_key:
+            # key_name に統一
+            if in_key.name:
+                logger.debug(f"in_key={in_key.name}")
+                key_name = in_key.name  # key_nameに統一
+            else:
+                logger.debug(f"in_key={in_key!r}")
+                key_name = in_key  # key_nameに統一
+        return key_name
+
     def main(self):
         """Main."""
         logger.debug("start.")
@@ -106,20 +121,11 @@ class BaseTimer:
 
             while self.is_active:
                 # キー入力
-                in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
-                key_name = ""
-                if in_key:
-                    # key_name に統一
-                    if in_key.name:
-                        logger.debug(f"in_key={in_key.name}")
-                        key_name = in_key.name  # key_nameに統一
-                    else:
-                        logger.debug(f"in_key={in_key!r}")
-                        key_name = in_key  # key_nameに統一
+                key_name = self.get_key_name()
 
-                    # キーマップに登録されているメソッドを呼び出す
-                    if key_name in self.key_map:
-                        self.key_map[key_name]()
+                # キーマップに登録されているメソッドを呼び出す
+                if key_name in self.key_map:
+                    self.key_map[key_name]()
 
                 # 時間経過
                 t_cur = time.monotonic()
@@ -169,24 +175,64 @@ class BaseTimer:
         """Display."""
         # logger.debug(f"t_elapsed={t_elapsed},is_paused={is_paused}")
 
-        t_remain = max(self.t_limit - t_elapsed, 0)
+        self.t_remain = max(self.t_limit - t_elapsed, 0)
+
+        str_date = f"{time.strftime('%H:%M:%S')}"
+        str_limit = self.t_str(self.t_limit)
+        str_elapsed = self.t_str(self.t_elapsed)
+        str_remain = self.t_str(self.t_remain)
+        str_state = ""
+        if is_paused:
+            str_state = "[PAUSE] "
+
         t_rate = t_elapsed / self.t_limit * 100
         # パーセント表示で、通常は小数点2位まで、100%だけ "100%" にしたい
-        t_rate_str = "100" if (p := round(t_rate, 2)) == 100 else f"{p:.2f}"
+        str_rate = "100%" if (p := round(t_rate, 1)) == 100 else f"{p:.1f}%"
+        rate_color = "white"
+        if t_rate >= 80:
+            rate_color = "yellow"
+            if t_rate >= 95:
+                rate_color = "red"
 
-        click.echo("\r", nl=False)
-        click.echo(f"{time.strftime('%m/%d %H:%M:%S')} ", nl=False)
-        click.secho(f"{self.title} ", fg=self.title_color, nl=False)
-        click.secho(self.t_str(self.t_limit), bold=True, nl=False)
-        click.echo("=", nl=False)
-        click.secho(self.t_str(t_elapsed), blink=is_paused, nl=False)
-        click.echo("+", nl=False)
-        click.secho(self.t_str(t_remain), blink=is_paused, nl=False)
-        click.echo(" ", nl=False)
-        click.secho(f"{t_rate_str}%", blink=is_paused, nl=False)
-        click.echo(" ", nl=False)
+        # プログレスバーの長さを求める
+        str_list = [
+            self.title,
+            str_date,
+            str_limit,
+            str_elapsed,
+            str_remain,
+            str_rate,
+            str_state,
+        ]
+        all_str_len = sum([len(s) for s in str_list])
+        sbar_len = self.term.width - all_str_len - len(str_list) - 1
 
-        self.pbar.display(t_elapsed)
+        # ポーズ中、または、終了時は、風車を止める
+        sbar_stop = self.is_paused or (not self.is_active)
+        str_sbar = self.pbar.get_str(
+            t_elapsed, bar_len=sbar_len, stop=sbar_stop
+        )
+
+        # 表示する文字列を作成(スタイル付き)
+        str_disp = "\r"
+        str_disp += str_date
+        str_disp += " "
+        str_disp += click.style(self.title, fg=self.title_color, bold=True)
+        str_disp += " "
+        str_disp += click.style(str_limit, bold=True)
+        str_disp += " "
+        if str_state:
+            str_disp += click.style(str_state, blink=is_paused)
+        str_disp += click.style(str_rate, fg=rate_color, blink=is_paused)
+        str_disp += " "
+        str_disp += click.style(str_elapsed, fg=rate_color, blink=is_paused)
+        str_disp += " "
+        str_disp += click.style(str_sbar, fg=rate_color, blink=is_paused)
+        str_disp += " "
+        str_disp += click.style(str_remain, fg=rate_color, blink=is_paused)
+
+        # 表示
+        click.echo(str_disp, nl=False)
 
     def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""
