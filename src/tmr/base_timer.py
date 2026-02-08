@@ -10,7 +10,7 @@ import click
 from blessed import Terminal
 from loguru import logger
 
-from . import ESQ_EL0, MIN_HOUR, SEC_MIN
+from . import ESQ_EL2, MIN_HOUR, SEC_MIN
 from .progress_bar import ProgressBar
 
 
@@ -20,9 +20,10 @@ class TimerCol:
 
     value: str = ""
     color: str = "white"
+    rate_color: bool = False
     bold: bool = False
     use: bool = True
-    blink: bool = False
+    pause_blink: bool = False
 
 
 @dataclass
@@ -44,6 +45,8 @@ class BaseTimer:
     COUNT_MANY = 999
     DEF_SEC1 = 0.5
     DEF_SEC2 = 1.5
+
+    PBAR_LEN_MIN = 10
 
     def __init__(
         self,
@@ -87,11 +90,11 @@ class BaseTimer:
             "date": TimerCol(),
             "title": TimerCol(bold=True),
             "limit": TimerCol(),
-            "state": TimerCol(blink=True),
-            "rate": TimerCol(blink=True),
-            "elapsed": TimerCol(blink=True),
-            "pbar": TimerCol(blink=True),
-            "remain": TimerCol(blink=True),
+            "state": TimerCol(pause_blink=True),
+            "rate": TimerCol(rate_color=True, pause_blink=True),
+            "elapsed": TimerCol(rate_color=True, pause_blink=True),
+            "pbar": TimerCol(rate_color=True, pause_blink=True),
+            "remain": TimerCol(rate_color=True, pause_blink=True),
         }
 
     def cmd_list(self) -> List[TimerCmd]:
@@ -148,9 +151,16 @@ class BaseTimer:
         with self.term.cbreak():
             # メインループ
             while self.is_active:
-                key_name = self.get_key_name()  # キー入力
+                # if self.term.width != prev_term_width:
+                #     logger.debug(f"term.width={self.term.width}")
+                #     prev_term_width = self.term.width
+                #     click.echo(f"{ESQ_EL2}")
+
+                # キー入力
+                key_name = self.get_key_name()
                 if key_name:
                     logger.debug(f"key_name={key_name}")
+
                 # キーマップに登録されているメソッドを呼び出す
                 if key_name in self.key_map:
                     self.key_map[key_name]()
@@ -173,10 +183,11 @@ class BaseTimer:
                         self.is_active = False
                         self.alarm_active = True
 
+        # タイマー満了、または、終了
         click.echo()
 
         if self.ring_alarm():  # アラーム alarm_active によっては鳴らない
-            click.echo(" Press any key to stop alarm..")
+            click.secho("[Press any key]", bold=True, blink=True, nl=False)
 
         with self.term.cbreak():
             while self.alarm_active:
@@ -191,15 +202,22 @@ class BaseTimer:
     def get_key_name(self) -> str:
         """Get key name."""
         in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
-        key_name = ""
-        if in_key:
-            # key_name に統一
-            if in_key.name:
-                logger.debug(f"in_key={in_key.name}")
-                key_name = in_key.name  # key_nameに統一
-            else:
-                logger.debug(f"in_key={in_key!r}")
-                key_name = in_key  # key_nameに統一
+
+        if not in_key:
+            return ""
+
+        logger.debug(
+            f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
+        )
+
+        if in_key.name:
+            key_name = in_key.name
+        else:
+            key_name = str(in_key)
+        logger.debug(f"key_name='{key_name}'")
+
+        if key_name is None:
+            key_name = ""
         return key_name
 
     def fn_quit(self):
@@ -245,7 +263,7 @@ class BaseTimer:
         self.col["limit"].value = self.t_str(self.t_limit)
         self.col["elapsed"].value = self.t_str(self.t_elapsed)
         self.col["remain"].value = self.t_str(t_remain)
-        self.col["pbar"].value = "-----"  # dummy
+        self.col["pbar"].value = "-" * self.PBAR_LEN_MIN  # 仮の値
 
         ## col["state"]
         self.col["state"].value = ""
@@ -256,15 +274,20 @@ class BaseTimer:
         t_rate = self.t_elapsed / self.t_limit * 100
         # パーセント表示で、通常は小数点1位まで、100%だけ "100%" にしたい
         self.col["rate"].value = (
-            "100%" if (p := round(t_rate, 1)) == 100 else f"{p:.1f}%"
+            "(100%)" if (p := round(t_rate, 1)) == 100 else f"({p:.1f}%)"
         )
 
         ## t_rate に応じて色を変更
-        self.col["rate"].color = "white"
-        if t_rate >= 80:
-            self.col["rate"].color = "yellow"
+        for c in self.col:
+            col = self.col[c]
+            if not col.rate_color:
+                continue
+
+            col.color = "white"
+            if t_rate >= 80:
+                col.color = "yellow"
             if t_rate >= 95:
-                self.col["rate"].color = "red"
+                col.color = "red"
 
         # 表示項目：優先順
         col_disp = [
@@ -302,7 +325,7 @@ class BaseTimer:
 
         if not col_disp:
             # 表示する項目がなくなった場合
-            click.secho(f"\r{ESQ_EL0}!?", blink=True, nl=False)
+            click.secho(f"\r{ESQ_EL2}!?", blink=True, nl=False)
             return
 
         # プログレスバーを表示する場合の処理
@@ -330,13 +353,13 @@ class BaseTimer:
                     c.value,
                     fg=c.color,
                     bold=c.bold,
-                    blink=(c.blink and self.is_paused),
+                    blink=(c.pause_blink and self.is_paused),
                 )
                 if c.value:
                     str_disp += " "
 
-        # 表示 (行末の " " は表示しない)
-        click.echo(f"{ESQ_EL0}{str_disp[:-1]}", nl=False)
+        # 表示 ([:-1] .. 行末の " " は表示しない)
+        click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""

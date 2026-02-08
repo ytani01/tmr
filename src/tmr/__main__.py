@@ -142,8 +142,8 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     except KeyboardInterrupt:
         click.echo("")
 
-    except Exception as e:
-        logger.error(f"{type(e).__name__}: {e}")
+    # except Exception as e:
+    #     logger.error(f"{type(e).__name__}: {e}")
 
     finally:
         click.echo(ESQ_CSR_ON, nl=False)
