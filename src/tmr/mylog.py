@@ -35,7 +35,7 @@ def logLevel(debug: bool = False) -> str:
     return "DEBUG" if debug else "INFO"
 
 
-def loggerInit(debug: bool = False) -> None:
+def loggerInit(debug: bool = False, out=sys.stderr) -> None:
     """Initialize logger."""
     logger.remove()
-    logger.add(sys.stderr, format=LOG_FMT, level=logLevel(debug))  # pyright: ignore[reportUnusedCallResult]
+    logger.add(out, format=LOG_FMT, level=logLevel(debug))

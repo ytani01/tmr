@@ -66,9 +66,9 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
         click.echo()
         logger.warning(type(e).__name__)
 
-    except Exception as e:
-        click.echo()
-        logger.error(f"{type(e).__name__}: {e}")
+    # except Exception as e:
+    #     click.echo()
+    #     logger.error(f"{type(e).__name__}: {e}")
 
     finally:
         click.echo(ESQ_CSR_ON, nl=False)
