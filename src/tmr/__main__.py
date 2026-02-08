@@ -4,7 +4,7 @@
 import click
 from loguru import logger
 
-from . import ESQ_CSR_OFF, ESQ_CSR_ON, SEC_MIN, __version__
+from . import ESQ_CSR_OFF, ESQ_CSR_ON, ESQ_EL2, SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
 from .mylog import loggerInit
@@ -56,23 +56,21 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     )
 
     limit = int(minutes * SEC_MIN)
+    tmr = None
     try:
         click.echo(ESQ_CSR_OFF, nl=False)
-        BaseTimer(
+        tmr = BaseTimer(
             ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
-        ).main()
+        )
+        tmr.main()
 
-    except KeyboardInterrupt as e:
-        click.echo()
-        logger.warning(type(e).__name__)
-
-    # except Exception as e:
-    #     click.echo()
-    #     logger.error(f"{type(e).__name__}: {e}")
+    except KeyboardInterrupt:
+        if tmr and tmr.alarm_active:
+            tmr.alarm_active = False
+            click.echo(f"{ESQ_EL2}", nl=False)
 
     finally:
-        click.echo(ESQ_CSR_ON, nl=False)
-        logger.debug("End.")
+        click.echo(f"\nEnd.{ESQ_CSR_ON}")
 
 
 cli.add_command(timer)
@@ -126,28 +124,31 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     long_break_sec = long_break_time * SEC_MIN
 
     title_work = ("WORK", "green")
-    title_break = ("BREAK", "red")
+    title_break = ("SHORT_BREAK", "yellow")
     title_lbreak = ("LONG_BREAK", "red")
 
+    tmr = None
     try:
         click.echo(ESQ_CSR_OFF, nl=False)
         while True:
             for _ in range(cycles - 1):
-                BaseTimer(title_work, work_sec).main()
-                BaseTimer(title_break, break_sec).main()
+                tmr = BaseTimer(title_work, work_sec)
+                tmr.main()
+                tmr = BaseTimer(title_break, break_sec)
+                tmr.main()
 
-            BaseTimer(title_work, work_sec).main()
-            BaseTimer(title_lbreak, long_break_sec).main()
+            tmr = BaseTimer(title_work, work_sec)
+            tmr.main()
+            tmr = BaseTimer(title_lbreak, long_break_sec)
+            tmr.main()
 
     except KeyboardInterrupt:
-        click.echo("")
-
-    # except Exception as e:
-    #     logger.error(f"{type(e).__name__}: {e}")
+        if tmr and tmr.alarm_active:
+            tmr.alarm_active = False
+            click.echo(f"{ESQ_EL2}", nl=False)
 
     finally:
-        click.echo(ESQ_CSR_ON, nl=False)
-        click.echo("End.")
+        click.echo(f"\nEnd.{ESQ_CSR_ON}")
 
 
 cli.add_command(pomodoro)

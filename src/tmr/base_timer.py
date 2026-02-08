@@ -88,6 +88,7 @@ class BaseTimer:
         logger.debug("")
         return {  # **重要**: 表示順にすること
             "date": TimerCol(),
+            "time": TimerCol(),
             "title": TimerCol(bold=True),
             "limit": TimerCol(),
             "state": TimerCol(pause_blink=True),
@@ -189,13 +190,14 @@ class BaseTimer:
         if self.ring_alarm():  # アラーム alarm_active によっては鳴らない
             click.secho("[Press any key]", bold=True, blink=True, nl=False)
 
-        with self.term.cbreak():
-            while self.alarm_active:
-                in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
-                if not in_key:
-                    continue
-                logger.debug(f"in_key={in_key}")
-                self.alarm_active = False
+            with self.term.cbreak():
+                while self.alarm_active:
+                    in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
+                    if not in_key:
+                        continue
+                    logger.debug(f"in_key={in_key}")
+                    self.alarm_active = False
+                    click.echo(ESQ_EL2, nl=False)
 
         logger.debug("done.")
 
@@ -259,7 +261,8 @@ class BaseTimer:
         t_remain = max(self.t_limit - self.t_elapsed, 0)
 
         # 表示文字列パーツの生成
-        self.col["date"].value = f"{time.strftime('%H:%M:%S')}"
+        self.col["date"].value = f"{time.strftime('%Y-%m-%d')}"
+        self.col["time"].value = f"{time.strftime('%H:%M:%S')}"
         self.col["limit"].value = self.t_str(self.t_limit)
         self.col["elapsed"].value = self.t_str(self.t_elapsed)
         self.col["remain"].value = self.t_str(t_remain)
@@ -298,6 +301,7 @@ class BaseTimer:
             "limit",
             "rate",
             "elapsed",
+            "time",
             "date",
         ]
         for c in self.col:
