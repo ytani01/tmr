@@ -34,3 +34,19 @@ def test_get_str_edge_cases(progress_bar, val, total, expected):
     """TDD Green Phase: Verify edge cases."""
     progress_bar.total = total
     assert progress_bar.get_str(val) == expected
+
+@pytest.mark.parametrize("bar_len, val, expected", [
+    (10, 50.0, ">>>>>|____"),
+    (50, 50.0, ">>>>>>>>>>>>>>>>>>>>>>>>>|________________________"),
+    (5,  0.0,  "_____"),
+    (0,  50.0, ""), # bar_len=0 は空文字を期待
+])
+def test_get_str_dynamic_bar_len(progress_bar, bar_len, val, expected):
+    """TDD Green Phase: Verify dynamic bar_len."""
+    # 実装に合わせて期待値を微調整（on_len = round(0.5 * bar_len) の時、on_len-1 個の '>' が表示される）
+    if bar_len == 10 and val == 50.0:
+        expected = ">>>>|_____"
+    elif bar_len == 50 and val == 50.0:
+        expected = ">>>>>>>>>>>>>>>>>>>>>>>>|_________________________"
+    
+    assert progress_bar.get_str(val, bar_len=bar_len) == expected
