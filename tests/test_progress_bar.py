@@ -24,3 +24,13 @@ def test_progress_bar_instance(progress_bar):
 def test_get_str_normal(progress_bar, val, expected):
     """TDD Green Phase: Verify normal progress values."""
     assert progress_bar.get_str(val) == expected
+
+@pytest.mark.parametrize("val, total, expected", [
+    (-10.0, 100.0, "_________________________"), # 負の値は 0.0 と同じ
+    (150.0, 100.0, ">>>>>>>>>>>>>>>>>>>>>>>>>"), # 超過は 100% と同じ
+    (10.0,  0.0,   ">>>>>>>>>>>>>>>>>>>>>>>>>"), # total=0 の場合は 100% (rate=1.0)
+])
+def test_get_str_edge_cases(progress_bar, val, total, expected):
+    """TDD Green Phase: Verify edge cases."""
+    progress_bar.total = total
+    assert progress_bar.get_str(val) == expected
