@@ -1,6 +1,6 @@
 # Implementation Plan: Code Review - Round 1
 
-## Phase 1: Preparation & Static Analysis
+## Phase 1: Preparation & Static Analysis [checkpoint: c8a3fa2]
 静的解析ツールを実行し、客観的な品質指標と警告を確認します。
 
 - [x] Task: 静的解析（Ruff, Mypy）の実行と結果の保存 f8c8310
@@ -8,7 +8,7 @@
     - [ ] `uv run mypy src tests > .gemini/tmp/mypy_output.txt` の実行
 - [x] Task: 現行テストスイートの実行とカバレッジ確認 1226423
     - [ ] `uv run pytest --cov=tmr tests` の実行と結果の確認
-- [~] Task: Conductor - User Manual Verification 'Preparation & Static Analysis' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Preparation & Static Analysis' (Protocol in workflow.md) c8a3fa2
 
 ## Phase 2: Systematic Code Review
 各ファイルを詳細に分析し、レビュー内容を `code-review1.md` に記述します。
