@@ -16,13 +16,13 @@
     - [x] 時間の加算・減算（スキップ/バック）機能が正しく動作することを検証するテストを書く
 - [x] Task: Conductor - User Manual Verification 'Phase 2: タイマーのコアロジックのテスト' (Protocol in workflow.md) [eaaa38b]
 
-#### Phase 3: TUI およびレイアウト計算のテスト
-- [ ] Task: `TimerCol` とレスポンシブ・レイアウトのテスト
-    - [ ] `TimerCol` クラスの計算ロジック（幅に応じた表示選択）を検証するテストを書く
-    - [ ] 仮想的なターミナル幅を変更し、レイアウトが期待通りに追従することを検証するテストを書く
-- [ ] Task: 描画パラメータの計算テスト
-    - [ ] `get_draw_params` 等の描画用データ生成ロジックが正しい値を返すことを検証するテストを書く
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: TUI およびレイアウト計算のテスト' (Protocol in workflow.md)
+#### Phase 3: TUI およびレイアウト計算のテスト [checkpoint: 165fff8]
+- [x] Task: `TimerCol` とレスポンシブ・レイアウトのテスト [ef1ed65]
+    - [x] `TimerCol` クラスの計算ロジック（幅に応じた表示選択）を検証するテストを書く
+    - [x] 仮想的なターミナル幅を変更し、レイアウトが期待通りに追従することを検証するテストを書く
+- [x] Task: 描画パラメータの計算テスト [ef1ed65]
+    - [x] `get_draw_params` 等の描画用データ生成ロジックが正しい値を返すことを検証するテストを書く
+- [x] Task: Conductor - User Manual Verification 'Phase 3: TUI およびレイアウト計算のテスト' (Protocol in workflow.md) [165fff8]
 
 #### Phase 4: 入力ハンドリングと堅牢性のテスト
 - [ ] Task: キーボードイベント処理のテスト
