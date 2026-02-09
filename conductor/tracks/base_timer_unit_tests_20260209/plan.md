@@ -33,8 +33,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 4: 入力ハンドリングと堅牢性のテスト' (Protocol in workflow.md) [14e2b76]
 
 #### Phase 5: 品質保証とカバレッジの確認
-- [ ] Task: 最終的なカバレッジ確認とリファクタリング
-    - [ ] `pytest --cov=src/tmr/base_timer.py` を実行し、未通過の分岐がないか確認する
-    - [ ] カバレッジ 80% 未満の場合は、不足しているケースを追加する
-    - [ ] テストコード自体をリファクタリングし、可読性とメンテナンス性を向上させる
+- [x] Task: 最終的なカバレッジ確認とリファクタリング [ab0b706]
+    - [x] `pytest --cov=src/tmr/base_timer.py` を実行し、未通過の分岐がないか確認する
+    - [x] カバレッジ 80% 未満の場合は、不足しているケースを追加する
+    - [x] テストコード自体をリファクタリングし、可読性とメンテナンス性を向上させる
 - [ ] Task: Conductor - User Manual Verification 'Phase 5: 品質保証とカバレッジの確認' (Protocol in workflow.md)
