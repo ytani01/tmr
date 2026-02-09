@@ -201,4 +201,26 @@ def test_key_mapping(base_timer):
     assert base_timer.key_map["q"] == base_timer.fn_quit
     assert base_timer.key_map["KEY_ESCAPE"] == base_timer.fn_quit
 
+def test_edge_cases_and_robustness(base_timer, mock_terminal, mock_click):
+    """
+    Verify behavior in edge cases like extremely small width and unknown keys.
+    """
+    # Extremely small width - display should print "!?"
+    base_timer.term.width = 0
+    base_timer.display()
+    mock_click.secho.assert_called_with("\r\x1b[2K!?", blink=True, nl=False)
+    
+    # Unknown key - get_key_name should handle it gracefully
+    mock_key = MagicMock()
+    mock_key.name = None
+    mock_key.__str__.return_value = "\x01" # Some control char
+    base_timer.term.inkey.return_value = mock_key
+    assert base_timer.get_key_name() == "\x01"
+    
+    # Empty title
+    base_timer.col["title"].value = ""
+    base_timer.term.width = 80
+    base_timer.display()
+    # Should not crash and should work normally
+
     
