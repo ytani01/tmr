@@ -1,16 +1,18 @@
 # Suggested Commands
 
-## Running the Application
-- `uv run tmr`: Execute the main CLI entrypoint.
-- `uv run tmr --help`: Show help message.
+このプロジェクトで頻繁に使用されるコマンドです。`uv` と `mise` を前提としています。
 
-## Development Tasks (using mise)
-- `mise run lint`: Run Ruff (format & check), Basedpyright, and Mypy.
-- `mise run test`: Run tests using Pytest (includes linting by dependency).
-- `mise run build`: Build the project (includes testing by dependency).
-- `mise run uppj`: Upgrade project dependencies and sync `uv.lock`.
+## アプリケーションの実行
+- `uv run tmr --help`: 全体ヘルプの表示
+- `uv run tmr timer <minutes>`: 指定分数のタイマー起動
+- `uv run tmr pomodoro`: ポモドーロ・タイマーの起動
 
-## Standard uv Commands
-- `uv sync`: Sync dependencies.
-- `uv add <package>`: Add a new dependency.
-- `uv run <command>`: Run a command in the project environment.
+## 開発・メンテナンス
+- `mise run uppj`: プロジェクトの依存関係を更新し、編集モードでインストールする
+- `mise run lint`: `ruff` (format & check), `basedpyright`, `mypy` を一括実行する
+- `mise run test`: `pytest` によるテストを実行する（`lint` に依存）
+- `mise run build`: パッケージをビルドする（`test` に依存）
+
+## Git 操作
+- 標準的な `git` コマンドを使用してください。
+- `git status`, `git diff`, `git log` など。

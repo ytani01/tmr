@@ -1,23 +1,22 @@
 # Style and Conventions
 
-## General
-- Follow PEP 8 for Python code style.
-- Use `loguru` for logging instead of the standard `logging` module.
-- Use `click` for all CLI-related logic.
+## 基本ルール
+- **1行の長さ:** 最大 78 文字 (`ruff` の設定に準拠)。
+- **ヘッダー:** すべてのソースファイルとテストファイルの冒頭に以下の著作権表示を含める必要があります。
+  ```python
+  #
+  # (c) 2026 Yoichi Tanibayashi
+  #
+  ```
+- **インポート順序:** `ruff` の `I` (isort) ルールに従ってソートする。
+- **命名規則:**
+    - クラス名: `PascalCase`
+    - 関数・変数・モジュール名: `snake_case`
 
-## Formatting & Linting
-- **Ruff**: Primary tool for formatting and linting.
-    - Line length: 78 characters (as per `mise.toml`).
-    - Format command: `uv run ruff format --line-length 78 src`.
-    - Check command: `uv run ruff check --fix --extend-select I src`.
-- **Type Hints**: Required and checked via `mypy` and `basedpyright`.
-    - Standard type checking mode for `basedpyright`.
+## 静的解析と型
+- **型ヒント:** 全ての関数とメソッドに適切な型ヒントを付与する。
+- **Docstrings:** トリプルダブルクォート (`"""Docstring."""`) を使用し、簡潔に記述する。
+- **静的解析ツール:** `ruff`, `mypy`, `basedpyright` をパスする必要がある。
 
-## Naming
-- Use `snake_case` for functions, variables, and file names.
-- Use `PascalCase` for classes.
-- Internal package: `tmr`.
-
-## Documentation
-- (Implicit) Use docstrings for modules, classes, and functions.
-- (Implicit) Follow standard Python documentation conventions.
+## TUI 制御
+- `blessed.Terminal` を使用し、エスケープシーケンスを直接扱う場合は `src/tmr/__init__.py` で定義された定数（`ESQ_EL2`, `ESQ_CSR_OFF` 等）を使用する。

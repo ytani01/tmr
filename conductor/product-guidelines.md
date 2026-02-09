@@ -1,15 +1,23 @@
-# Product Guidelines: tmr
+# Product Guidelines - tmr
 
-## UX/UI Design Principles
-- **Minimalism**: 必要な情報（残り時間、現在のサイクル、ステータス）のみをシンプルに表示する。
-- **Responsiveness**: プログレスバーは滑らかに更新され、ユーザーの入力（中断など）に即座に反応する。
-- **Terminal Integration**: 標準的なターミナルカラースキームを尊重し、特定の環境に依存しすぎない色使いにする。
+## Communication Style
+- **Professional & Technical**: ユーザーに対しては、簡潔で正確な情報提供を旨とします。
+- **Technical Accuracy**: 数値、状態遷移、エラーメッセージは技術的に正確であり、曖昧さを排除します。
+- **Logging**: `loguru` を活用し、DEBUG, INFO, ERROR のレベルを適切に使い分けます。主要な処理ログは標準エラー出力（stderr）に集約し、標準出力（stdout）は TUI 描画に専念させます。
 
-## Implementation Guidelines
-- **TUI (Text User Interface)**: 動的な表示には `rich` などのライブラリの採用を検討する（現在は標準出力ベース）。
-- **Non-blocking**: タイマーが動作している間も、シグナル処理やユーザー入力を受け付けられるように設計する。
-- **Configurability**: コードを直接変更しなくても、CLIオプションや（将来的に）設定ファイルで挙動を変更できるようにする。
+## Visual Identity & UI
+- **Minimalist Detail**: 清潔なレイアウトを維持しつつ、進捗率、残り時間、サイクル数などの詳細情報を整理して表示します。
+- **Color-Coded Status**: 色を状態の識別に活用します。
+    - 作業中 (WORK): Cyan
+    - 短い休憩 (SHORT_BREAK): Yellow
+    - 長い休憩 (LONG_BREAK): Red
+    - アラーム/警告: 特定の色（赤の反転など）
+- **Responsive Logic (Priority-based)**: ターミナルのリサイズに対し、優先順位の低い要素（タイトル、補助テキスト等）から段階的に省略し、情報の有用性を最大化します。
+
+## Documentation
+- **Comprehensiveness**: ヘルプやドキュメントは、すべてのサブコマンド、オプション、キーバインドの仕様を網羅的に記述します。
+- **Predictability**: ユーザーがドキュメントを読むことで、すべての動作と設定項目を正確に把握できるようにします。
 
 ## Error Handling
-- 無効な時間設定が入力された場合は、適切なエラーメッセージを表示して終了する。
-- `KeyboardInterrupt` (Ctrl+C) を適切にキャッチし、クリーンアップ（終了メッセージの表示など）を行ってから終了する。
+- **Structured Exit**: 終了コードを適切に使用し、他の CLI ツールやスクリプトからの呼び出しにおいて予測可能な動作を提供します。
+- **Clear Messages**: エラー発生時は、原因が特定しやすい具体的なメッセージを表示します。

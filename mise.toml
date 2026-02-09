@@ -56,14 +56,14 @@ run = '''
 # format and linting
 
 echo "# ruff"
-uv run ruff format --line-length 78 src # tests samples
-uv run ruff check --fix --extend-select I  src # tests samples
+uv run ruff format --line-length 78 src tests # samples
+uv run ruff check --fix --extend-select I  src tests # samples
 
 echo "# basedpyright"
-uv run basedpyright src # tests samples
+uv run basedpyright src tests # samples
 
 echo "# mypy"
-uv run mypy src # tests samples
+uv run mypy src tests # samples
 
 uv run tmr -V
 '''

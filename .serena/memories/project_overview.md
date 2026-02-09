@@ -1,25 +1,31 @@
-# Pomodoro CLI Project Overview
+# Project Overview: tmr
 
-## Purpose
-A command-line Pomodoro timer application.
+`tmr` は、Python 3.13 以上で動作する CLI タイマーおよびポモドーロ・タイマーです。
 
-## Tech Stack
-- **Language**: Python (>=3.13)
-- **CLI Framework**: [Click](https://click.palletsprojects.com/)
-- **Logging**: [Loguru](https://github.com/Delgan/loguru)
-- **Dependency Management**: [uv](https://github.com/astral-sh/uv)
-- **Task Runner**: [mise](https://mise.jdx.dev/)
-- **Linting/Formatting**: [Ruff](https://github.com/astral-sh/ruff), [Mypy](https://mypy-lang.org/), [Basedpyright](https://github.com/detachhead/basedpyright)
-- **Testing**: [Pytest](https://pytest.org/)
+## 主な機能
+- シンプルなカウントダウンタイマー (`tmr timer`)
+- ポモドーロ・タイマー (`tmr pomodoro`)
+- `blessed` を使用した TUI プログレスバー表示
+- ターミナルサイズ変更に追従するレスポンシブな表示
+- キー入力による操作（一時停止、進める、戻る等）
 
-## Codebase Structure
-- `src/tmr/`: Main package.
-    - `__main__.py`: Entrypoint for the CLI.
-    - `base_timer.py`: Core timer logic and TUI control.
-    - `progress_bar.py`: Progress bar and spinner display.
-    - `click_utils.py`: CLI utilities.
-    - `mylog.py`: Logging setup.
-    - `__init__.py`: Constants and version information.
-- `tests/`: Unit and integration tests.
-- `pyproject.toml`: Project metadata and dependencies.
-- `mise.toml`: Task definitions for development.
+## 技術スタック
+- **言語:** Python 3.13+
+- **プロジェクト管理:** `uv`
+- **タスク管理:** `mise`
+- **TUI 制御:** `blessed`
+- **CLI フレームワーク:** `click`
+- **ロギング:** `loguru`
+- **静的解析:** `ruff`, `mypy`, `basedpyright`
+- **テスト:** `pytest`
+
+## コードベースの構造
+- `src/tmr/`: ソースコード
+    - `__main__.py`: CLI エントリーポイント
+    - `base_timer.py`: タイマーの基底ロジックと TUI 制御
+    - `progress_bar.py`: プログレスバーの描画ロジック
+    - `click_utils.py`: CLI オプションの共通化など
+    - `mylog.py`: loguru の初期化
+- `tests/`: テストコード
+- `samples/`: サンプルスクリプト
+- `docs/`: ドキュメント・画像
