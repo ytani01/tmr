@@ -32,9 +32,9 @@
     - [x] 極端に狭い画面幅や、未知のキー入力に対する挙動を検証するテストを書く
 - [x] Task: Conductor - User Manual Verification 'Phase 4: 入力ハンドリングと堅牢性のテスト' (Protocol in workflow.md) [14e2b76]
 
-#### Phase 5: 品質保証とカバレッジの確認
+#### Phase 5: 品質保証とカバレッジの確認 [checkpoint: af00ac5]
 - [x] Task: 最終的なカバレッジ確認とリファクタリング [ab0b706]
     - [x] `pytest --cov=src/tmr/base_timer.py` を実行し、未通過の分岐がないか確認する
     - [x] カバレッジ 80% 未満の場合は、不足しているケースを追加する
     - [x] テストコード自体をリファクタリングし、可読性とメンテナンス性を向上させる
-- [ ] Task: Conductor - User Manual Verification 'Phase 5: 品質保証とカバレッジの確認' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 5: 品質保証とカバレッジの確認' (Protocol in workflow.md) [af00ac5]
