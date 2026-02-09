@@ -184,7 +184,8 @@ def test_get_key_name(base_timer, mock_terminal):
     
     # Character key
     mock_key.name = None
-    mock_key.__str__.return_value = "p"
+    # Use setattr to avoid lint errors with static analyzers
+    setattr(mock_key, "__str__", MagicMock(return_value="p"))
     assert base_timer.get_key_name() == "p"
     
     # Timeout (no key)
@@ -213,7 +214,7 @@ def test_edge_cases_and_robustness(base_timer, mock_terminal, mock_click):
     # Unknown key - get_key_name should handle it gracefully
     mock_key = MagicMock()
     mock_key.name = None
-    mock_key.__str__.return_value = "\x01" # Some control char
+    setattr(mock_key, "__str__", MagicMock(return_value="\x01")) # Some control char
     base_timer.term.inkey.return_value = mock_key
     assert base_timer.get_key_name() == "\x01"
     
@@ -222,5 +223,61 @@ def test_edge_cases_and_robustness(base_timer, mock_terminal, mock_click):
     base_timer.term.width = 80
     base_timer.display()
     # Should not crash and should work normally
+
+def test_keys_str(base_timer):
+    """
+    Verify keys_str formatting.
+    """
+    assert base_timer.keys_str(["p", " "]) == "[p], [SPACE]"
+    assert base_timer.keys_str(["KEY_ENTER"]) == "[ENTER]"
+
+def test_mk_cmd_str(base_timer):
+    """
+    Verify mk_cmd_str formatting.
+    """
+    cmd = base_timer.cmd[0] # pause
+    assert "Pause timer." in base_timer.mk_cmd_str(cmd)
+
+def test_fn_help(base_timer, mock_click):
+    """
+    Verify fn_help prints command list.
+    """
+    base_timer.fn_help()
+    # Should call echo multiple times
+    assert mock_click.echo.called
+
+def test_main_loop_simple(base_timer, mock_time, mock_terminal, mock_click):
+    """
+    Verify the main loop runs and terminates correctly.
+    """
+    # Mock monotonic to return sequence: start, loop1, loop2 (trigger limit)
+    mock_time.monotonic.side_effect = [100.0, 101.0, 281.0, 281.0, 281.0]
+    base_timer.t_limit = 180.0
+    
+    # Mock get_key_name to return nothing and then quit
+    # (Though we'll terminate by time limit here)
+    with patch.object(BaseTimer, "get_key_name", side_effect=["", ""]):
+        with patch.object(BaseTimer, "ring_alarm", return_value=False):
+            base_timer.main()
+    
+    assert base_timer.is_active is False
+    assert base_timer.alarm_active is True
+
+def test_ring_alarm_and_thread(base_timer, mock_click):
+    """
+    Verify ring_alarm starts a thread.
+    """
+    base_timer.alarm_active = True
+    base_timer.alarm_params = (1, 0.01, 0.01)
+    
+    with patch("threading.Thread") as mock_thread:
+        base_timer.ring_alarm()
+        mock_thread.assert_called_once()
+        
+    # Test the thread function itself
+    base_timer.alarm_active = True
+    base_timer.thr_alarm(1, 0.001, 0.001)
+    assert mock_click.echo.called # Should call '\a'
+    assert base_timer.alarm_active is False
 
     
