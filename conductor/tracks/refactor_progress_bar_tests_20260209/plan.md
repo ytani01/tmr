@@ -1,8 +1,8 @@
 # 実装計画 - Progress Bar テストの再構築
 
-## フェーズ 1: セットアップと基盤整備
+## フェーズ 1: セットアップと基盤整備 [checkpoint: 6ddb1a6]
 - [x] Task: 新規テストファイル `tests/test_progress_bar.py` の作成と基本フィクスチャの設定 [d054e0b]
-- [ ] Task: Conductor - User Manual Verification 'フェーズ 1: セットアップと基盤整備' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'フェーズ 1: セットアップと基盤整備' (Protocol in workflow.md) [6ddb1a6]
 
 ## フェーズ 2: コアロジックのテスト (TDD: get_str)
 - [ ] Task: `get_str` のレンダリング計算（正常系）の TDD 実装
