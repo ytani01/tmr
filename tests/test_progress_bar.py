@@ -1,8 +1,9 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 from tmr.progress_bar import ProgressBar
 
@@ -71,24 +72,22 @@ def test_get_str_dynamic_bar_len(progress_bar, bar_len, val, expected):
 
     assert progress_bar.get_str(val, bar_len=bar_len) == expected
 
+
 def test_display(progress_bar):
     """TDD Green Phase: Verify display method calls click.secho correctly."""
     val = 50.0
     fg = "green"
     blink = True
     bar_len = 10
-    
+
     # 風車のインデックスをリセット
     progress_bar.ch_head_i = 0
     expected_char = progress_bar.ch_head[0]
     expected_str = f"{'>' * 4}{expected_char}{'_' * 5}"
-    
+
     with patch("tmr.progress_bar.click.secho") as mock_secho:
         progress_bar.display(val, bar_len=bar_len, fg=fg, blink=blink)
-        
+
         mock_secho.assert_called_once_with(
-            expected_str, 
-            fg=fg, 
-            blink=blink, 
-            nl=False
+            expected_str, fg=fg, blink=blink, nl=False
         )
