@@ -7,14 +7,14 @@
     - [ ] `time.sleep` や時刻取得をパッチし、決定論的なテストが可能な環境を整える
 - [x] Task: Conductor - User Manual Verification 'Phase 1: テスト基盤の整備とモックの実装' (Protocol in workflow.md) [84b292d]
 
-#### Phase 2: タイマーのコアロジックのテスト
+#### Phase 2: タイマーのコアロジックのテスト [checkpoint: eaaa38b]
 - [x] Task: 状態管理とライフサイクルのテスト [6019ad5]
-    - [ ] `BaseTimer` の初期化、開始、停止、一時停止、再開の状態遷移を検証するテストを書く
-    - [ ] 既存のコードがこれらのテストにパスすることを確認し、必要に応じて修正する
+    - [x] `BaseTimer` の初期化、開始、停止、一時停止、再開の状態遷移を検証するテストを書く
+    - [x] 既存のコードがこれらのテストにパスすることを確認し、必要に応じて修正する
 - [x] Task: 時間計算と操作のテスト [e93f7c0]
-    - [ ] 時間のカウントダウンが（モック化された時間軸で）正確に行われることを検証するテストを書く
-    - [ ] 時間の加算・減算（スキップ/バック）機能が正しく動作することを検証するテストを書く
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: タイマーのコアロジックのテスト' (Protocol in workflow.md)
+    - [x] 時間のカウントダウンが（モック化された時間軸で）正確に行われることを検証するテストを書く
+    - [x] 時間の加算・減算（スキップ/バック）機能が正しく動作することを検証するテストを書く
+- [x] Task: Conductor - User Manual Verification 'Phase 2: タイマーのコアロジックのテスト' (Protocol in workflow.md) [eaaa38b]
 
 #### Phase 3: TUI およびレイアウト計算のテスト
 - [ ] Task: `TimerCol` とレスポンシブ・レイアウトのテスト
