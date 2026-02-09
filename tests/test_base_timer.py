@@ -1,7 +1,7 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -170,5 +170,35 @@ def test_rate_color(base_timer):
     base_timer.t_elapsed = 96.0
     base_timer.display()
     assert base_timer.col["remain"].color == "red"
+
+def test_get_key_name(base_timer, mock_terminal):
+    """
+    Verify get_key_name correctly identifies pressed keys.
+    """
+    # Mocking inkey result
+    mock_key = MagicMock()
+    mock_key.name = "KEY_ENTER"
+    base_timer.term.inkey.return_value = mock_key
+    
+    assert base_timer.get_key_name() == "KEY_ENTER"
+    
+    # Character key
+    mock_key.name = None
+    mock_key.__str__.return_value = "p"
+    assert base_timer.get_key_name() == "p"
+    
+    # Timeout (no key)
+    base_timer.term.inkey.return_value = None
+    assert base_timer.get_key_name() == ""
+
+def test_key_mapping(base_timer):
+    """
+    Verify that keys are mapped to the correct functions.
+    """
+    # Check some key mappings
+    assert base_timer.key_map["p"] == base_timer.fn_pause
+    assert base_timer.key_map[" "] == base_timer.fn_pause
+    assert base_timer.key_map["q"] == base_timer.fn_quit
+    assert base_timer.key_map["KEY_ESCAPE"] == base_timer.fn_quit
 
     
