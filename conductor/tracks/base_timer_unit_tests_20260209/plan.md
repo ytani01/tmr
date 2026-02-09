@@ -1,11 +1,11 @@
 # Implementation Plan: src/base_timer.py の単体テストを作る
 
-#### Phase 1: テスト基盤の整備とモックの実装
+#### Phase 1: テスト基盤の整備とモックの実装 [checkpoint: 84b292d]
 - [x] Task: テストファイルと基本的なフィクスチャの作成 [a6fff61]
     - [ ] `tests/test_base_timer.py` を作成し、基本的なインポートとテストクラスをセットアップする
     - [ ] `blessed.Terminal` を安全にモック化し、実際の端末操作を発生させない仕組みを作る
     - [ ] `time.sleep` や時刻取得をパッチし、決定論的なテストが可能な環境を整える
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: テスト基盤の整備とモックの実装' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: テスト基盤の整備とモックの実装' (Protocol in workflow.md) [84b292d]
 
 #### Phase 2: タイマーのコアロジックのテスト
 - [ ] Task: 状態管理とライフサイクルのテスト
