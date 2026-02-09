@@ -4,7 +4,7 @@
 - [x] Task: 新規テストファイル `tests/test_progress_bar.py` の作成と基本フィクスチャの設定 [d054e0b]
 - [x] Task: Conductor - User Manual Verification 'フェーズ 1: セットアップと基盤整備' (Protocol in workflow.md) [6ddb1a6]
 
-## フェーズ 2: コアロジックのテスト (TDD: get_str)
+## フェーズ 2: コアロジックのテスト (TDD: get_str) [checkpoint: 2f27e5b]
 - [x] Task: `get_str` のレンダリング計算（正常系）の TDD 実装 [b2bf3cc]
     - [x] 0%, 50%, 100% の進捗に対する失敗テストの記述
     - [x] テストを実行し、失敗を確認
@@ -17,7 +17,7 @@
     - [x] 様々な `bar_len` 値に対する失敗テストの記述
     - [x] テストを実行し、失敗を確認
     - [x] テストがパスすることを確認
-- [ ] Task: Conductor - User Manual Verification 'フェーズ 2: コアロジックのテスト' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'フェーズ 2: コアロジックのテスト' (Protocol in workflow.md) [2f27e5b]
 
 ## フェーズ 3: UI および出力のテスト (display)
 - [ ] Task: `click` 連携を含む `display` メソッドの TDD 実装
