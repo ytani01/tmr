@@ -40,6 +40,10 @@ def base_timer(mock_terminal, mock_pbar, mock_click, mock_time):
     # Set default values for terminal size to avoid comparison errors
     mock_terminal.return_value.width = 80
     mock_terminal.return_value.height = 24
+
+    # Access fixtures to satisfy linters (as they are needed for patching)
+    _ = (mock_pbar, mock_click, mock_time)
+
     return BaseTimer()
 
 
