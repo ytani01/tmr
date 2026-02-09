@@ -24,13 +24,13 @@
     - [x] `get_draw_params` 等の描画用データ生成ロジックが正しい値を返すことを検証するテストを書く
 - [x] Task: Conductor - User Manual Verification 'Phase 3: TUI およびレイアウト計算のテスト' (Protocol in workflow.md) [165fff8]
 
-#### Phase 4: 入力ハンドリングと堅牢性のテスト
+#### Phase 4: 入力ハンドリングと堅牢性のテスト [checkpoint: 14e2b76]
 - [x] Task: キーボードイベント処理のテスト [8efb2aa]
     - [x] 特定のキー入力が期待されるコマンド（一時停止、終了等）に正しくマップされることを検証するテストを書く
     - [x] イベントループ内での入力待ちとタイムアウト処理をシミュレートするテストを書く
 - [x] Task: エッジケースと堅牢性のテスト [8da9a02]
     - [x] 極端に狭い画面幅や、未知のキー入力に対する挙動を検証するテストを書く
-- [ ] Task: Conductor - User Manual Verification 'Phase 4: 入力ハンドリングと堅牢性のテスト' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 4: 入力ハンドリングと堅牢性のテスト' (Protocol in workflow.md) [14e2b76]
 
 #### Phase 5: 品質保証とカバレッジの確認
 - [ ] Task: 最終的なカバレッジ確認とリファクタリング
