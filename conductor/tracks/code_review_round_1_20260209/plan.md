@@ -28,7 +28,7 @@
 ## Phase 3: Finalization
 レビュー内容を整理し、納品物を確定させます。
 
-- [ ] Task: `code-review1.md` の最終フォーマット調整
-    - [ ] 優先度のラベル付けが適切か確認
-    - [ ] 目次の作成とリンクの確認
-- [ ] Task: Conductor - User Manual Verification 'Finalization' (Protocol in workflow.md)
+- [x] Task: `code-review1.md` の最終フォーマット調整 19cfb6c
+    - [x] 優先度のラベル付けが適切か確認
+    - [x] 目次の作成とリンクの確認
+- [~] Task: Conductor - User Manual Verification 'Finalization' (Protocol in workflow.md)
