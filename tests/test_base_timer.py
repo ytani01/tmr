@@ -80,3 +80,41 @@ def test_fn_quit(base_timer):
     assert base_timer.is_paused is False
     assert base_timer.alarm_active is False
     assert base_timer.cmd_quit is True
+
+def test_fn_forward(base_timer, mock_time):
+    """
+    Verify fn_forward advances time correctly.
+    """
+    mock_time.monotonic.return_value = 100.0
+    base_timer.t_limit = 180.0
+    base_timer.t_start = 100.0
+    base_timer.t_elapsed = 0.0
+    
+    # 10秒進める -> t_start が 10秒前(90.0)になる
+    base_timer.fn_forward(10.0)
+    assert base_timer.t_start == 90.0
+    assert base_timer.t_elapsed == 10.0
+
+    # 限界を超えて進める
+    base_timer.fn_forward(200.0)
+    assert base_timer.t_start == 100.0 - 180.0 # t_cur - t_limit
+    assert base_timer.t_elapsed == 180.0
+
+def test_fn_backward(base_timer, mock_time):
+    """
+    Verify fn_backward moves time back correctly.
+    """
+    mock_time.monotonic.return_value = 100.0
+    base_timer.t_limit = 180.0
+    base_timer.t_start = 90.0
+    base_timer.t_elapsed = 10.0
+    
+    # 5秒戻す -> t_start が 5秒後(95.0)になる
+    base_timer.fn_backward(5.0)
+    assert base_timer.t_start == 95.0
+    assert base_timer.t_elapsed == 5.0
+
+    # 限界(開始時)を超えて戻す
+    base_timer.fn_backward(100.0)
+    assert base_timer.t_start == 100.0 # t_cur
+    assert base_timer.t_elapsed == 0.0
