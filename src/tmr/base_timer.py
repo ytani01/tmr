@@ -46,6 +46,12 @@ class BaseTimer:
     DEF_SEC1 = 0.5
     DEF_SEC2 = 1.5
 
+    PERCENT_COLOR = {
+        "white": 0,
+        "yellow": 80,
+        "red": 95,
+    }
+
     PBAR_LEN_MIN = 10
 
     def __init__(
@@ -53,6 +59,7 @@ class BaseTimer:
         title: tuple[str, str] = DEF_TITLE,
         t_limit: float = DEF_LIMIT,
         arlarm_params=(COUNT_MANY, DEF_SEC1, DEF_SEC2),
+        enable_next: bool = False,
     ):
         """Constractor."""
         logger.debug(
@@ -65,6 +72,7 @@ class BaseTimer:
         self.col["title"].color = title[1]
         self.t_limit = t_limit
         self.alarm_params = arlarm_params
+        self.enable_next = enable_next
 
         self.t_start = 0.0
         self.t_elapsed = 0.0
@@ -72,6 +80,7 @@ class BaseTimer:
         self.is_active = False
         self.is_paused = False
         self.alarm_active = False
+        self.cmd_quit = False  # quitコマンドによる終了
 
         self.pbar = ProgressBar(self.t_limit)
 
@@ -104,7 +113,7 @@ class BaseTimer:
         return [
             TimerCmd(
                 info="pause timer.",
-                keys=[" ", "KEY_ENTER"],
+                keys=["p", "P", " "],
                 fn=self.fn_pause,
             ),
             TimerCmd(
@@ -131,6 +140,11 @@ class BaseTimer:
                 info="clear terminal.",
                 keys=["KEY_CTRL_L"],
                 fn=click.clear,
+            ),
+            TimerCmd(
+                info="next.",
+                keys=["n", "N", "KEY_ENTER"],
+                fn=self.fn_next,
             ),
             TimerCmd(
                 info="quit.",
@@ -202,7 +216,11 @@ class BaseTimer:
         logger.debug("done.")
 
     def get_key_name(self) -> str:
-        """Get key name."""
+        """Get key name.
+
+        **Important**
+        Remember to call self.term.break() before calling this function.
+        """
         in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
 
         if not in_key:
@@ -212,6 +230,7 @@ class BaseTimer:
             f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
         )
 
+        key_name = None
         if in_key.name:
             key_name = in_key.name
         else:
@@ -223,7 +242,19 @@ class BaseTimer:
         return key_name
 
     def fn_quit(self):
+        """Quit."""
         logger.debug("")
+        self.is_active = False
+        self.is_paused = False
+        self.alarm_active = False
+        self.cmd_quit = True
+
+    def fn_next(self):
+        """Quit and next."""
+        logger.debug("")
+        if not self.enable_next:
+            return
+
         self.is_active = False
         self.is_paused = False
         self.alarm_active = False
@@ -257,7 +288,7 @@ class BaseTimer:
 
     def display(self):
         """Display."""
-        logger.debug("")
+        # logger.debug("")
         t_remain = max(self.t_limit - self.t_elapsed, 0)
 
         # 表示文字列パーツの生成
@@ -286,11 +317,9 @@ class BaseTimer:
             if not col.rate_color:
                 continue
 
-            col.color = "white"
-            if t_rate >= 80:
-                col.color = "yellow"
-            if t_rate >= 95:
-                col.color = "red"
+            for c in self.PERCENT_COLOR:
+                if t_rate >= self.PERCENT_COLOR[c]:
+                    col.color = c
 
         # 表示項目：優先順
         col_disp = [
@@ -310,21 +339,21 @@ class BaseTimer:
         # 行の長さを計算する関数
         def all_len(cols: list[str]) -> int:
             """Calculate length."""
-            logger.debug(f"cols={cols}")
+            # logger.debug(f"cols={cols}")
             _len = 0
             for c in cols:
                 val = self.col[c].value
                 if val:
                     _len += len(val) + 1
-                logger.debug(f"'{val}' {_len}")
+                # logger.debug(f"'{val}' {_len}")
             _len -= 1 if _len > 0 else 0
-            logger.debug(f"all_len={_len}")
+            # logger.debug(f"all_len={_len}")
             return _len
 
         # 長過ぎる場合、優先度に応じて表示する項目を省略する
         while all_len(col_disp) > self.term.width:
             c_name = col_disp.pop()  # 最低優先度項目抜く
-            logger.debug(f"c_name={c_name},c_priority={col_disp}")
+            # logger.debug(f"c_name={c_name},c_priority={col_disp}")
             self.col[c_name].use = False
 
         if not col_disp:
@@ -337,7 +366,7 @@ class BaseTimer:
             # プログレスバーの長さ
             col_disp.remove("pbar")
             pbar_len = self.term.width - all_len(col_disp) - 1
-            logger.debug(f"pbar_len={pbar_len}")
+            # logger.debug(f"pbar_len={pbar_len}")
 
             # ポーズ中・終了時は、風車を止める
             pbar_stop = self.is_paused or (not self.is_active)

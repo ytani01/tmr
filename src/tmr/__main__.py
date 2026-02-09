@@ -123,24 +123,46 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     break_sec = break_time * SEC_MIN
     long_break_sec = long_break_time * SEC_MIN
 
-    title_work = ("WORK", "green")
+    title_work = ("WORK", "cyan")
     title_break = ("SHORT_BREAK", "yellow")
     title_lbreak = ("LONG_BREAK", "red")
 
     tmr = None
+
+    click.echo("COMMANDS:")
+    click.echo("  [P],[SPACE]: pause")
+    click.echo("  [N],[ENTER]: next")
+    click.echo("  [Q],[ESC]  : quit")
+    click.echo()
+
+    flag_quit = False
     try:
         click.echo(ESQ_CSR_OFF, nl=False)
         while True:
-            for _ in range(cycles - 1):
-                tmr = BaseTimer(title_work, work_sec)
+            for i in range(cycles):
+                tmr = BaseTimer(title_work, work_sec, enable_next=True)
                 tmr.main()
-                tmr = BaseTimer(title_break, break_sec)
-                tmr.main()
+                if tmr.cmd_quit:
+                    flag_quit = True
+                    break
 
-            tmr = BaseTimer(title_work, work_sec)
-            tmr.main()
-            tmr = BaseTimer(title_lbreak, long_break_sec)
-            tmr.main()
+                logger.debug(f"i={i}")
+                if i < cycles - 1:
+                    tmr = BaseTimer(title_break, break_sec, enable_next=True)
+                    tmr.main()
+                    if tmr.cmd_quit:
+                        flag_quit = True
+                        break
+                else:
+                    tmr = BaseTimer(
+                        title_lbreak, long_break_sec, enable_next=True
+                    )
+                    tmr.main()
+                    if tmr.cmd_quit:
+                        flag_quit = True
+                        break
+            if flag_quit:
+                break
 
     except KeyboardInterrupt:
         if tmr and tmr.alarm_active:
