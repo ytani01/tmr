@@ -8,7 +8,7 @@
     - [ ] `uv run mypy src tests > .gemini/tmp/mypy_output.txt` の実行
 - [x] Task: 現行テストスイートの実行とカバレッジ確認 1226423
     - [ ] `uv run pytest --cov=tmr tests` の実行と結果の確認
-- [ ] Task: Conductor - User Manual Verification 'Preparation & Static Analysis' (Protocol in workflow.md)
+- [~] Task: Conductor - User Manual Verification 'Preparation & Static Analysis' (Protocol in workflow.md)
 
 ## Phase 2: Systematic Code Review
 各ファイルを詳細に分析し、レビュー内容を `code-review1.md` に記述します。
