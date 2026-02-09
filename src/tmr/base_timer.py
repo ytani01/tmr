@@ -30,6 +30,7 @@ class TimerCol:
 class TimerCmd:
     """Timer Command."""
 
+    name: str
     info: str
     keys: List[str]
     fn: Callable[[], None]  # []:引数なし、 None:戻り値なし
@@ -112,46 +113,77 @@ class BaseTimer:
         logger.debug("")
         return [
             TimerCmd(
-                info="pause timer.",
+                name="pause",
+                info="Pause timer.",
                 keys=["p", "P", " "],
                 fn=self.fn_pause,
             ),
             TimerCmd(
-                info="forward 1 second.",
+                name="forward1",
+                info="Forward 1 second.",
                 keys=["+", "=", "KEY_RIGHT", "KEY_CTRL_F"],
                 fn=lambda: self.fn_forward(1.0),
             ),
             TimerCmd(
-                info="backward 1 second.",
+                name="backward1",
+                info="Backward 1 second.",
                 keys=["-", "_", "KEY_LEFT", "KEY_CTRL_B"],
                 fn=lambda: self.fn_backward(1.0),
             ),
             TimerCmd(
-                info="foward 10 seconds.",
+                name="forward10",
+                info="Forward 10 seconds.",
                 keys=["KEY_DOWN", "KEY_CTRL_N"],
                 fn=lambda: self.fn_forward(10.0),
             ),
             TimerCmd(
-                info="backward 10 seconds.",
+                name="bk10",
+                info="Backward 10 seconds.",
                 keys=["KEY_UP", "KEY_CTRL_P"],
                 fn=lambda: self.fn_backward(10.0),
             ),
             TimerCmd(
-                info="clear terminal.",
+                name="clear",
+                info="Clear terminal.",
                 keys=["KEY_CTRL_L"],
                 fn=click.clear,
             ),
             TimerCmd(
-                info="next.",
+                name="next",
+                info="Next.",
                 keys=["n", "N", "KEY_ENTER"],
                 fn=self.fn_next,
             ),
             TimerCmd(
-                info="quit.",
+                name="quit",
+                info="Quit.",
                 keys=["q", "Q", "KEY_ESCAPE"],
                 fn=self.fn_quit,
             ),
+            TimerCmd(
+                name="help",
+                info="Help.",
+                keys=["h", "H", "?"],
+                fn=self.fn_help,
+            ),
         ]
+
+    def keys_str(self, key_list: list[str]) -> str:
+        """Keys string."""
+        ret_str = ""
+        for k in key_list:
+            k_str = f"[{k}]"
+            if k == " ":
+                k_str = "[SPACE]"
+            if k.startswith("KEY_"):
+                k_str = f"[{k[4:]}]"
+            ret_str += k_str + ", "
+        return ret_str[:-2]
+
+    def mk_cmd_str(self, cmd: TimerCmd):
+        """Make command str."""
+        ret = f"{self.keys_str(cmd.keys):<30}: {cmd.info}"
+        return ret
 
     def main(self):
         """Main."""
@@ -241,6 +273,16 @@ class BaseTimer:
             key_name = ""
         return key_name
 
+    def fn_help(self):
+        """Quit."""
+        logger.debug("")
+        click.echo(f"{ESQ_EL2}COMMAND LIST:")
+        for c in self.cmd:
+            if c.name == "next" and not self.enable_next:
+                continue
+            click.echo(f"  {self.mk_cmd_str(c)}")
+        click.echo()
+
     def fn_quit(self):
         """Quit."""
         logger.debug("")
@@ -274,29 +316,29 @@ class BaseTimer:
         self.t_start = min(self.t_start + sec, t_cur)
         self.t_elapsed = t_cur - self.t_start
 
-    def t_str(self, sec: int | float) -> str:
-        """Time string.
-
-        sec -> "M:SS"
-        """
-        m, s = divmod(sec, SEC_MIN)
-        if m < MIN_HOUR:
-            return f"{m:.0f}:{s:02.0f}"
-
-        h, m = divmod(m, MIN_HOUR)
-        return f"{h:.0f}:{m:02.0f}:{s:02.0f}"
-
     def display(self):
         """Display."""
         # logger.debug("")
         t_remain = max(self.t_limit - self.t_elapsed, 0)
 
         # 表示文字列パーツの生成
+        def t_str(sec: int | float) -> str:
+            """Time string.
+
+            sec -> "M:SS"
+            """
+            m, s = divmod(sec, SEC_MIN)
+            if m < MIN_HOUR:
+                return f"{m:.0f}:{s:02.0f}"
+
+            h, m = divmod(m, MIN_HOUR)
+            return f"{h:.0f}:{m:02.0f}:{s:02.0f}"
+
         self.col["date"].value = f"{time.strftime('%Y-%m-%d')}"
         self.col["time"].value = f"{time.strftime('%H:%M:%S')}"
-        self.col["limit"].value = self.t_str(self.t_limit)
-        self.col["elapsed"].value = self.t_str(self.t_elapsed)
-        self.col["remain"].value = self.t_str(t_remain)
+        self.col["limit"].value = t_str(self.t_limit)
+        self.col["elapsed"].value = t_str(self.t_elapsed)
+        self.col["remain"].value = t_str(t_remain)
         self.col["pbar"].value = "-" * self.PBAR_LEN_MIN  # 仮の値
 
         ## col["state"]

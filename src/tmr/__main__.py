@@ -129,11 +129,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
 
     tmr = None
 
-    click.echo("COMMANDS:")
-    click.echo("  [P],[SPACE]: pause")
-    click.echo("  [N],[ENTER]: next")
-    click.echo("  [Q],[ESC]  : quit")
-    click.echo()
+    click.echo("[?] for help")
 
     flag_quit = False
     try:
