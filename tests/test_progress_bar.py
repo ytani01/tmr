@@ -2,6 +2,7 @@
 # (c) 2026 Yoichi Tanibayashi
 #
 import pytest
+from unittest.mock import patch
 
 from tmr.progress_bar import ProgressBar
 
@@ -69,8 +70,6 @@ def test_get_str_dynamic_bar_len(progress_bar, bar_len, val, expected):
         expected = ">>>>>>>>>>>>>>>>>>>>>>>>|_________________________"
 
     assert progress_bar.get_str(val, bar_len=bar_len) == expected
-
-from unittest.mock import patch
 
 def test_display(progress_bar):
     """TDD Green Phase: Verify display method calls click.secho correctly."""

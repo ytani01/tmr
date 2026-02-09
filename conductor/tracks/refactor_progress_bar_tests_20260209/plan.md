@@ -28,5 +28,5 @@
 
 ## フェーズ 4: 品質保証と最終チェック
 - [~] Task: `src/tmr/progress_bar.py` の最終テストカバレッジの検証 (目標: >90%)
-- [ ] Task: フルリンティング (`ruff`) および型チェック (`mypy`, `basedpyright`) の実行
+- [~] Task: フルリンティング (`ruff`) および型チェック (`mypy`, `basedpyright`) の実行
 - [ ] Task: Conductor - User Manual Verification 'フェーズ 4: 品質保証と最終チェック' (Protocol in workflow.md)
