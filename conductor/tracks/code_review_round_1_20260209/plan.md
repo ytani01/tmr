@@ -6,7 +6,7 @@
 - [x] Task: 静的解析（Ruff, Mypy）の実行と結果の保存 f8c8310
     - [ ] `uv run ruff check src tests > .gemini/tmp/ruff_output.txt` の実行
     - [ ] `uv run mypy src tests > .gemini/tmp/mypy_output.txt` の実行
-- [ ] Task: 現行テストスイートの実行とカバレッジ確認
+- [x] Task: 現行テストスイートの実行とカバレッジ確認 1226423
     - [ ] `uv run pytest --cov=tmr tests` の実行と結果の確認
 - [ ] Task: Conductor - User Manual Verification 'Preparation & Static Analysis' (Protocol in workflow.md)
 
