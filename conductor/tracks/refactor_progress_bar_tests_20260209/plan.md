@@ -19,12 +19,12 @@
     - [x] テストがパスすることを確認
 - [x] Task: Conductor - User Manual Verification 'フェーズ 2: コアロジックのテスト' (Protocol in workflow.md) [2f27e5b]
 
-## フェーズ 3: UI および出力のテスト (display)
+## フェーズ 3: UI および出力のテスト (display) [checkpoint: fe96f23]
 - [x] Task: `click` 連携を含む `display` メソッドの TDD 実装 [17f545f]
     - [x] `click.testing.CliRunner` または mock を使用し、`fg` 色や `blink` 属性を検証する失敗テストの記述
     - [x] テストを実行し、失敗を確認
     - [x] テストがパスすることを確認
-- [ ] Task: Conductor - User Manual Verification 'フェーズ 3: UI および出力のテスト' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'フェーズ 3: UI および出力のテスト' (Protocol in workflow.md) [fe96f23]
 
 ## フェーズ 4: 品質保証と最終チェック
 - [ ] Task: `src/tmr/progress_bar.py` の最終テストカバレッジの検証 (目標: >90%)
