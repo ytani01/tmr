@@ -8,7 +8,7 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: テスト基盤の整備とモックの実装' (Protocol in workflow.md) [84b292d]
 
 #### Phase 2: タイマーのコアロジックのテスト
-- [ ] Task: 状態管理とライフサイクルのテスト
+- [x] Task: 状態管理とライフサイクルのテスト [6019ad5]
     - [ ] `BaseTimer` の初期化、開始、停止、一時停止、再開の状態遷移を検証するテストを書く
     - [ ] 既存のコードがこれらのテストにパスすることを確認し、必要に応じて修正する
 - [ ] Task: 時間計算と操作のテスト
