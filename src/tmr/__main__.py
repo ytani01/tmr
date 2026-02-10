@@ -59,10 +59,9 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     tmr = None
     try:
         click.echo(ESQ_CSR_OFF, nl=False)
-        tmr = BaseTimer(
+        _ = BaseTimer(
             ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
-        )
-        tmr.main()
+        ).main()
 
     except KeyboardInterrupt:
         if tmr and tmr.alarm_active:
@@ -131,34 +130,31 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
 
     click.echo("[?] for help")
 
-    flag_quit = False
     try:
         click.echo(ESQ_CSR_OFF, nl=False)
         while True:
             for i in range(cycles):
+                # WORK
                 tmr = BaseTimer(title_work, work_sec, enable_next=True)
-                tmr.main()
-                if tmr.cmd_quit:
-                    flag_quit = True
+                if tmr.main():
                     break
 
                 logger.debug(f"i={i}")
                 if i < cycles - 1:
+                    # SHORT_BREAK
                     tmr = BaseTimer(title_break, break_sec, enable_next=True)
-                    tmr.main()
-                    if tmr.cmd_quit:
-                        flag_quit = True
+                    if tmr.main():
                         break
                 else:
+                    # LONG_BREAK
                     tmr = BaseTimer(
                         title_lbreak, long_break_sec, enable_next=True
                     )
-                    tmr.main()
-                    if tmr.cmd_quit:
-                        flag_quit = True
+                    if tmr.main():
                         break
-            if flag_quit:
-                break
+            else:  # for内部が最後までbreak せずに回りきったとき
+                continue
+            break  # for内部でbreakされたとき
 
     except KeyboardInterrupt:
         if tmr and tmr.alarm_active:

@@ -81,7 +81,7 @@ class BaseTimer:
         self.is_active = False
         self.is_paused = False
         self.alarm_active = False
-        self.cmd_quit = False  # quitコマンドによる終了
+        self.quit_by_quitcmd = False  # quitコマンドによる終了
 
         self.pbar = ProgressBar(self.t_limit)
 
@@ -185,8 +185,12 @@ class BaseTimer:
         ret = f"{self.keys_str(cmd.keys):<30}: {cmd.info}"
         return ret
 
-    def main(self):
-        """Main."""
+    def main(self) -> bool:
+        """Main.
+
+        Return:
+            bool: quitコマンドで終了した場合は True
+        """
         logger.debug("start.")
 
         self.t_start = time.monotonic()
@@ -246,6 +250,7 @@ class BaseTimer:
                     click.echo(ESQ_EL2, nl=False)
 
         logger.debug("done.")
+        return self.quit_by_quitcmd
 
     def get_key_name(self) -> str:
         """Get key name.
@@ -289,7 +294,7 @@ class BaseTimer:
         self.is_active = False
         self.is_paused = False
         self.alarm_active = False
-        self.cmd_quit = True
+        self.quit_by_quitcmd = True
 
     def fn_next(self):
         """Quit and next."""
