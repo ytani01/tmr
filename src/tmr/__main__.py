@@ -69,7 +69,7 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
             click.echo(f"{ESQ_EL2}", nl=False)
 
     finally:
-        click.echo(f"\nEnd.{ESQ_CSR_ON}")
+        click.echo(f"End.{ESQ_CSR_ON}")
 
 
 cli.add_command(timer)
@@ -162,7 +162,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
             click.echo(f"{ESQ_EL2}", nl=False)
 
     finally:
-        click.echo(f"\nEnd.{ESQ_CSR_ON}")
+        click.echo(f"End.{ESQ_CSR_ON}")
 
 
 cli.add_command(pomodoro)

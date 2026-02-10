@@ -32,7 +32,7 @@ class TimerCmd:
 
     name: str
     info: str
-    keys: List[str]
+    keys: list[str]
     fn: Callable[[], None]  # []:引数なし、 None:戻り値なし
 
 
@@ -59,12 +59,16 @@ class BaseTimer:
         self,
         title: tuple[str, str] = DEF_TITLE,
         t_limit: float = DEF_LIMIT,
-        arlarm_params=(COUNT_MANY, DEF_SEC1, DEF_SEC2),
+        arlarm_params: tuple[int, float, float] = (
+            COUNT_MANY,
+            DEF_SEC1,
+            DEF_SEC2,
+        ),
         enable_next: bool = False,
     ):
         """Constractor."""
         logger.debug(
-            f"title={title},limit={t_limit},alarm_param={arlarm_params}"
+            f"title={title},limit={t_limit},alarm_params={arlarm_params}"
         )
 
         self.col: dict = self.col_list()
@@ -93,10 +97,10 @@ class BaseTimer:
         # fn = self.key_map["key"] となる。
         self.key_map = {k: item.fn for item in self.cmd for k in item.keys}
 
-    def col_list(self) -> dict:
+    def col_list(self) -> dict[str, TimerCol]:
         """Column list."""
         logger.debug("")
-        return {  # **重要**: 表示順にすること
+        return {  # **重要**: 表示順にすること。TBD:明示的にソートの必要性
             "date": TimerCol(),
             "time": TimerCol(),
             "title": TimerCol(bold=True),
@@ -237,17 +241,29 @@ class BaseTimer:
         # タイマー満了、または、終了
         click.echo()
 
-        if self.ring_alarm():  # アラーム alarm_active によっては鳴らない
-            click.secho("[Press any key]", bold=True, blink=True, nl=False)
+        if (
+            thr := self.ring_alarm()
+        ):  # アラーム alarm_active によっては鳴らない
+            try:
+                click.secho(
+                    "[Press any key]\r", bold=True, blink=True, nl=False
+                )
 
-            with self.term.cbreak():
-                while self.alarm_active:
-                    in_key = self.term.inkey(timeout=self.IN_KEY_TIMEOUT)
-                    if not in_key:
-                        continue
-                    logger.debug(f"in_key={in_key}")
-                    self.alarm_active = False
-                    click.echo(ESQ_EL2, nl=False)
+                with self.term.cbreak():
+                    while self.alarm_active:
+                        key_name = self.get_key_name()
+                        if not key_name:
+                            continue
+
+                        if self.key_map[key_name] == self.fn_quit:
+                            self.quit_by_quitcmd = True
+                        logger.debug(f"in_key={key_name!r}")
+                        click.echo(f"{ESQ_EL2}{key_name!r}\r", nl=False)
+                        break
+            finally:
+                self.alarm_active = False
+                thr.join()
+                click.echo(f"{ESQ_EL2}\r", nl=False)
 
         logger.debug("done.")
         return self.quit_by_quitcmd
@@ -267,15 +283,13 @@ class BaseTimer:
             f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
         )
 
-        key_name = None
+        key_name = ""
         if in_key.name:
             key_name = in_key.name
         else:
             key_name = str(in_key)
         logger.debug(f"key_name='{key_name}'")
 
-        if key_name is None:
-            key_name = ""
         return key_name
 
     def fn_help(self):
@@ -457,7 +471,7 @@ class BaseTimer:
 
         self.alarm_active = False
 
-    def ring_alarm(self) -> bool:
+    def ring_alarm(self) -> threading.Thread | None:
         """Ring alarm.
 
         make thread and start.
@@ -465,9 +479,10 @@ class BaseTimer:
         logger.debug(f"alarm_params={self.alarm_params}")
 
         if not self.alarm_active:
-            return False
+            return None
 
-        threading.Thread(
+        thr = threading.Thread(
             target=self.thr_alarm, args=self.alarm_params, daemon=True
-        ).start()
-        return True
+        )
+        thr.start()
+        return thr
