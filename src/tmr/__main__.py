@@ -8,6 +8,7 @@ from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
 from .mylog import loggerInit
+from .pomodoro import PomodoroConfig, PomodoroCore
 from .utils import TerminalContext
 
 
@@ -110,42 +111,20 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         )
     )
 
-    work_sec = work_time * SEC_MIN
-    break_sec = break_time * SEC_MIN
-    long_break_sec = long_break_time * SEC_MIN
+    # 秒換算
+    config = PomodoroConfig(
+        work_sec=work_time * SEC_MIN,
+        break_sec=break_time * SEC_MIN,
+        long_break_sec=long_break_time * SEC_MIN,
+        cycles=cycles,
+    )
 
-    title_work = ("WORK", "cyan")
-    title_break = ("SHORT_BREAK", "yellow")
-    title_lbreak = ("LONG_BREAK", "red")
-
-    tmr = None
+    core = PomodoroCore(config)
 
     click.echo("[?] for help")
 
     with TerminalContext():
-        while True:
-            for i in range(cycles):
-                # WORK
-                tmr = BaseTimer(title_work, work_sec, enable_next=True)
-                if tmr.main():
-                    break
-
-                logger.debug(f"i={i}")
-                if i < cycles - 1:
-                    # SHORT_BREAK
-                    tmr = BaseTimer(title_break, break_sec, enable_next=True)
-                    if tmr.main():
-                        break
-                else:
-                    # LONG_BREAK
-                    tmr = BaseTimer(
-                        title_lbreak, long_break_sec, enable_next=True
-                    )
-                    if tmr.main():
-                        break
-            else:  # for内部が最後までbreak せずに回りきったとき
-                continue
-            break  # for内部でbreakされたとき
+        core.run()
 
 
 cli.add_command(pomodoro)
