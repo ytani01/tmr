@@ -12,7 +12,7 @@ def test_terminal_context_normal():
         # Enter: hide cursor
         mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)
         # Exit: show cursor
-        mock_echo.assert_any_call(f"End.{ESQ_CSR_ON}")
+        mock_echo.assert_any_call(f"{ESQ_CSR_ON}", nl=False)
 
 
 def test_terminal_context_keyboard_interrupt():
@@ -24,9 +24,9 @@ def test_terminal_context_keyboard_interrupt():
         # Enter: hide cursor
         mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)  # type: ignore[unreachable]
         # Exit: show cursor
-        mock_echo.assert_any_call(f"End.{ESQ_CSR_ON}")
+        mock_echo.assert_any_call(f"{ESQ_CSR_ON}", nl=False)
         # Exit: handle interrupt
-        mock_echo.assert_any_call(f"{ESQ_EL2}\rAborted.", nl=False)
+        mock_echo.assert_any_call(f"\n{ESQ_EL2}Aborted.")
 
 
 def test_terminal_context_other_exception():
@@ -43,4 +43,4 @@ def test_terminal_context_other_exception():
         # Enter: hide cursor
         mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)
         # Exit: show cursor (always called in finally)
-        mock_echo.assert_any_call(f"End.{ESQ_CSR_ON}")
+        mock_echo.assert_any_call(f"{ESQ_CSR_ON}", nl=False)
