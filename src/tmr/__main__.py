@@ -4,10 +4,11 @@
 import click
 from loguru import logger
 
-from . import ESQ_CSR_OFF, ESQ_CSR_ON, ESQ_EL2, SEC_MIN, __version__
+from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
 from .mylog import loggerInit
+from .utils import TerminalContext
 
 
 @click.group()
@@ -56,20 +57,11 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
     )
 
     limit = int(minutes * SEC_MIN)
-    tmr = None
-    try:
-        click.echo(ESQ_CSR_OFF, nl=False)
+
+    with TerminalContext():
         _ = BaseTimer(
             ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
         ).main()
-
-    except KeyboardInterrupt:
-        if tmr and tmr.alarm_active:
-            tmr.alarm_active = False
-            click.echo(f"{ESQ_EL2}", nl=False)
-
-    finally:
-        click.echo(f"End.{ESQ_CSR_ON}")
 
 
 cli.add_command(timer)
@@ -130,8 +122,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
 
     click.echo("[?] for help")
 
-    try:
-        click.echo(ESQ_CSR_OFF, nl=False)
+    with TerminalContext():
         while True:
             for i in range(cycles):
                 # WORK
@@ -155,14 +146,6 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
             else:  # for内部が最後までbreak せずに回りきったとき
                 continue
             break  # for内部でbreakされたとき
-
-    except KeyboardInterrupt:
-        if tmr and tmr.alarm_active:
-            tmr.alarm_active = False
-            click.echo(f"{ESQ_EL2}", nl=False)
-
-    finally:
-        click.echo(f"End.{ESQ_CSR_ON}")
 
 
 cli.add_command(pomodoro)
