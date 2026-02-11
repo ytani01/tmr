@@ -74,7 +74,7 @@ class ProgressBar:
         self,
         val: float,
         *,
-        bar_len: int = 0,
+        bar_len: int | None = None,
         stop: bool = False,
         fg: str = "white",
         blink: bool = False,
