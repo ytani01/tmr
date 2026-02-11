@@ -22,7 +22,7 @@ def test_terminal_context_keyboard_interrupt():
             raise KeyboardInterrupt()
 
         # Enter: hide cursor
-        mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)
+        mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)  # type: ignore[unreachable]
         # Exit: show cursor
         mock_echo.assert_any_call(f"End.{ESQ_CSR_ON}")
         # Exit: handle interrupt
@@ -38,7 +38,7 @@ def test_terminal_context_other_exception():
         except ValueError:
             pass
         else:
-            assert False, "ValueError should be raised"
+            assert False, "ValueError should be raised"  # type: ignore[unreachable]
 
         # Enter: hide cursor
         mock_echo.assert_any_call(ESQ_CSR_OFF, nl=False)
