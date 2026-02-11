@@ -3,7 +3,7 @@ from unittest import mock
 from click.testing import CliRunner
 
 from tmr.__main__ import pomodoro
-from tmr.pomodoro import PomodoroConfig, PomodoroCore
+from tmr.pomodoro import PomodoroConfig, PomodoroTimer
 
 
 def test_pomodoro_args():
@@ -18,23 +18,23 @@ def test_pomodoro_args():
     assert "--cycles" in result.output
 
 
-def test_pomodoro_core_run():
-    """Verify PomodoroCore logic"""
+def test_pomodoro_timer_run():
+    """Verify PomodoroTimer logic"""
     config = PomodoroConfig(
         work_sec=0.1,
         break_sec=0.1,
         long_break_sec=0.1,
         cycles=2,
     )
-    core = PomodoroCore(config)
+    timer = PomodoroTimer(config)
 
     # Mock _run_timer to avoid actual sleep and user input
     # 4 calls expected for 2 cycles: Work, ShortBreak, Work, LongBreak
     # We want to simulate a Quit on the last call to exit the infinite loop
-    with mock.patch.object(core, "_run_timer") as mock_run_timer:
+    with mock.patch.object(timer, "_run_timer") as mock_run_timer:
         mock_run_timer.side_effect = [False, False, False, True]
 
-        Quit = core.run()
+        Quit = timer.run()
 
         assert Quit is True
         assert mock_run_timer.call_count == 4
@@ -51,11 +51,11 @@ def test_pomodoro_core_run():
 
 
 def test_pomodoro_cli_exec():
-    """Verify CLI command invokes PomodoroCore correctly"""
+    """Verify CLI command invokes PomodoroTimer correctly"""
     runner = CliRunner()
 
-    with mock.patch("tmr.__main__.PomodoroCore") as MockCore:
-        instance = MockCore.return_value
+    with mock.patch("tmr.__main__.PomodoroTimer") as MockTimer:
+        instance = MockTimer.return_value
         instance.run.return_value = True  # Simulate quit
 
         result = runner.invoke(
@@ -65,52 +65,52 @@ def test_pomodoro_cli_exec():
 
         assert result.exit_code == 0
 
-        # Verify PomodoroCore initialized with correct config
-        assert MockCore.call_count == 1
-        config_arg = MockCore.call_args[0][0]
+        # Verify PomodoroTimer initialized with correct config
+        assert MockTimer.call_count == 1
+        config_arg = MockTimer.call_args[0][0]
         assert isinstance(config_arg, PomodoroConfig)
         assert config_arg.cycles == 2
         # Verify run called
-    instance.run.assert_called_once()
+        instance.run.assert_called_once()
 
 
-def test_pomodoro_core_quit_in_work():
-    """Verify PomodoroCore quits correctly during Work"""
+def test_pomodoro_timer_quit_in_work():
+    """Verify PomodoroTimer quits correctly during Work"""
     config = PomodoroConfig(
         work_sec=0.1,
         break_sec=0.1,
         long_break_sec=0.1,
         cycles=2,
     )
-    core = PomodoroCore(config)
+    timer = PomodoroTimer(config)
 
-    with mock.patch.object(core, "_run_timer") as mock_run_timer:
+    with mock.patch.object(timer, "_run_timer") as mock_run_timer:
         # 1st call (WORK) returns True (Quit)
         mock_run_timer.side_effect = [True]
 
-        Quit = core.run()
+        Quit = timer.run()
 
         assert Quit is True
         assert mock_run_timer.call_count == 1
         assert mock_run_timer.call_args[0][0] == "WORK       "
 
 
-def test_pomodoro_core_quit_in_short_break():
-    """Verify PomodoroCore quits correctly during Short Break"""
+def test_pomodoro_timer_quit_in_short_break():
+    """Verify PomodoroTimer quits correctly during Short Break"""
     config = PomodoroConfig(
         work_sec=0.1,
         break_sec=0.1,
         long_break_sec=0.1,
         cycles=2,
     )
-    core = PomodoroCore(config)
+    timer = PomodoroTimer(config)
 
-    with mock.patch.object(core, "_run_timer") as mock_run_timer:
+    with mock.patch.object(timer, "_run_timer") as mock_run_timer:
         # 1. Work -> False
         # 2. Short Break -> True (Quit)
         mock_run_timer.side_effect = [False, True]
 
-        Quit = core.run()
+        Quit = timer.run()
 
         assert Quit is True
         assert mock_run_timer.call_count == 2
@@ -120,7 +120,7 @@ def test_pomodoro_core_quit_in_short_break():
         assert calls[1].args[0] == "SHORT_BREAK"
 
 
-def test_pomodoro_core_run_timer():
+def test_pomodoro_timer_run_timer():
     """Verify _run_timer implementation calls BaseTimer"""
     config = PomodoroConfig(
         work_sec=0.1,
@@ -128,14 +128,14 @@ def test_pomodoro_core_run_timer():
         long_break_sec=0.1,
         cycles=1,
     )
-    core = PomodoroCore(config)
+    timer = PomodoroTimer(config)
 
     with mock.patch("tmr.pomodoro.BaseTimer") as MockTimer:
         instance = MockTimer.return_value
         instance.main.return_value = True  # Quit
 
         # Call _run_timer directly
-        ret = core._run_timer("TEST", 10.0, "white")
+        ret = timer._run_timer("TEST", 10.0, "white")
 
         assert ret is True
         MockTimer.assert_called_once()

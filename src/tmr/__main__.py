@@ -8,7 +8,7 @@ from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
 from .mylog import loggerInit
-from .pomodoro import PomodoroConfig, PomodoroCore
+from .pomodoro import PomodoroConfig, PomodoroTimer
 from .utils import TerminalContext
 
 
@@ -119,12 +119,12 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         cycles=cycles,
     )
 
-    core = PomodoroCore(config)
+    timer = PomodoroTimer(config)
 
     click.echo("[?] for help")
 
     with TerminalContext():
-        core.run()
+        timer.run()
 
 
 cli.add_command(pomodoro)

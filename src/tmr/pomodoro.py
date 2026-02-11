@@ -14,7 +14,7 @@ class PomodoroConfig:
     cycles: int
 
 
-class PomodoroCore:
+class PomodoroTimer:
     def __init__(self, config: PomodoroConfig):
         self.config = config
 
