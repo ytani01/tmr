@@ -276,7 +276,7 @@ def test_main_loop_simple(base_timer, mock_time, mock_terminal, mock_click):
             base_timer.main()
 
     assert base_timer.is_active is False
-    assert base_timer.alarm_active is True
+    assert base_timer.alarm_active is False
 
 
 def test_ring_alarm_and_thread(base_timer, mock_click):

@@ -241,11 +241,11 @@ class BaseTimer:
                         self.alarm_active = True
 
         # タイマー満了、または、終了
-        click.echo()
-
+        thr = None
         if (
             thr := self.ring_alarm()
         ):  # アラーム alarm_active によっては鳴らない
+            key_name = ""
             try:
                 # click.secho(
                 #     "[Press any key]\r", bold=True, blink=True, nl=False
@@ -255,17 +255,25 @@ class BaseTimer:
                     while self.alarm_active:
                         key_name = self.get_key_name()
                         if not key_name:
+                            self.display()
                             continue
-
-                        if self.key_map.get(key_name) == self.fn_quit:
-                            self.quit_by_quitcmd = True
                         logger.debug(f"in_key={key_name!r}")
-                        click.echo(f"{ESQ_EL2}{key_name!r}\r", nl=False)
                         break
             finally:
-                self.alarm_active = False
-                thr.join()
-                click.echo(f"{ESQ_EL2}\r", nl=False)
+                pass
+
+        self.alarm_active = False
+        self.display()
+        click.echo()
+
+        click.echo(f"{ESQ_EL2}{key_name!r}\r", nl=False)
+
+        if self.key_map.get(key_name) == self.fn_quit:
+            self.quit_by_quitcmd = True
+
+        if thr:
+            thr.join()
+        click.echo(f"{ESQ_EL2}\r", nl=False)
 
         logger.debug("done.")
         return self.quit_by_quitcmd
@@ -366,7 +374,7 @@ class BaseTimer:
         self.col["state"].value = ""
         if self.is_paused:
             self.col["state"].value = "[PAUSE]"
-        if self.t_elapsed >= self.t_limit:
+        if self.t_elapsed >= self.t_limit and self.alarm_active:
             self.col["state"].value = "[TIME UP]"
 
         ## col["rate"]

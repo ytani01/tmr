@@ -27,7 +27,9 @@ class PomodoroCore:
         while True:
             for i in range(self.config.cycles):
                 # Work
-                if self._run_timer("WORK", self.config.work_sec, "cyan"):
+                if self._run_timer(
+                    "WORK       ", self.config.work_sec, "cyan"
+                ):
                     return True  # Quit
 
                 # Break
@@ -40,7 +42,7 @@ class PomodoroCore:
                 else:
                     # Long Break
                     if self._run_timer(
-                        "LONG_BREAK", self.config.long_break_sec, "red"
+                        "LONG_BREAK ", self.config.long_break_sec, "red"
                     ):
                         return True  # Quit
 

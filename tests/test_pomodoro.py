@@ -41,13 +41,13 @@ def test_pomodoro_core_run():
 
         calls = mock_run_timer.call_args_list
         # 1. Work
-        assert calls[0].args[0] == "WORK"
+        assert calls[0].args[0] == "WORK       "
         # 2. Short Break
         assert calls[1].args[0] == "SHORT_BREAK"
         # 3. Work
-        assert calls[2].args[0] == "WORK"
+        assert calls[2].args[0] == "WORK       "
         # 4. Long Break (last one in loop logic for i == cycles -1)
-        assert calls[3].args[0] == "LONG_BREAK"
+        assert calls[3].args[0] == "LONG_BREAK "
 
 
 def test_pomodoro_cli_exec():
@@ -92,7 +92,7 @@ def test_pomodoro_core_quit_in_work():
 
         assert Quit is True
         assert mock_run_timer.call_count == 1
-        assert mock_run_timer.call_args[0][0] == "WORK"
+        assert mock_run_timer.call_args[0][0] == "WORK       "
 
 
 def test_pomodoro_core_quit_in_short_break():
@@ -116,7 +116,7 @@ def test_pomodoro_core_quit_in_short_break():
         assert mock_run_timer.call_count == 2
 
         calls = mock_run_timer.call_args_list
-        assert calls[0].args[0] == "WORK"
+        assert calls[0].args[0] == "WORK       "
         assert calls[1].args[0] == "SHORT_BREAK"
 
 
