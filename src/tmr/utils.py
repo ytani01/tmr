@@ -16,9 +16,9 @@ class TerminalContext:
 
     def __exit__(self, exc_type, exc_value, traceback):
         # 例外発生時も含め、必ずカーソルを表示に戻す
-        click.echo(f"End.{ESQ_CSR_ON}")
+        click.echo(f"{ESQ_CSR_ON}", nl=False)
 
         if exc_type is KeyboardInterrupt:
             # KeyboardInterrupt はここで処理し、スタックトレースを出さずに終了
-            click.echo(f"{ESQ_EL2}\rAborted.", nl=False)
+            click.echo(f"\n{ESQ_EL2}Aborted.")
             return True  # 例外を抑制

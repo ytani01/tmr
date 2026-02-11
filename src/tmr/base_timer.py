@@ -107,7 +107,7 @@ class BaseTimer:
             "time": TimerCol(),
             "title": TimerCol(bold=True),
             "limit": TimerCol(),
-            "state": TimerCol(pause_blink=True),
+            "state": TimerCol(rate_color=True, pause_blink=True),
             "rate": TimerCol(rate_color=True, pause_blink=True),
             "elapsed": TimerCol(rate_color=True, pause_blink=True),
             "pbar": TimerCol(rate_color=True, pause_blink=True),
@@ -247,9 +247,9 @@ class BaseTimer:
             thr := self.ring_alarm()
         ):  # アラーム alarm_active によっては鳴らない
             try:
-                click.secho(
-                    "[Press any key]\r", bold=True, blink=True, nl=False
-                )
+                # click.secho(
+                #     "[Press any key]\r", bold=True, blink=True, nl=False
+                # )
 
                 with self.term.cbreak():
                     while self.alarm_active:
@@ -366,6 +366,8 @@ class BaseTimer:
         self.col["state"].value = ""
         if self.is_paused:
             self.col["state"].value = "[PAUSE]"
+        if self.t_elapsed >= self.t_limit:
+            self.col["state"].value = "[TIME UP]"
 
         ## col["rate"]
         t_rate = self.t_elapsed / self.t_limit * 100
@@ -443,13 +445,19 @@ class BaseTimer:
         # **注意** col_priorityを使うと順番が崩れる
         str_disp = "\r"
         for col_key in self.col:
+            f_blink = False
             c = self.col[col_key]
             if c.use:
+                if c.pause_blink and self.is_paused:
+                    f_blink = True
+                if col_key == "state" and self.t_elapsed >= self.t_limit:
+                    f_blink = True
+
                 str_disp += click.style(
                     c.value,
                     fg=c.color,
                     bold=c.bold,
-                    blink=(c.pause_blink and self.is_paused),
+                    blink=f_blink,
                 )
                 if c.value:
                     str_disp += " "

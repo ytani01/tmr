@@ -45,7 +45,6 @@ class PomodoroCore:
                         return True  # Quit
 
             # forループが中断されずに完了した場合、whileループで次のサイクルへ
-            # (現状の仕様通り、無限に繰り返す)
 
     def _run_timer(self, title_text: str, seconds: float, color: str) -> bool:
         """単発タイマーの実行
