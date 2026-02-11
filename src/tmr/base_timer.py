@@ -257,7 +257,7 @@ class BaseTimer:
                         if not key_name:
                             continue
 
-                        if self.key_map[key_name] == self.fn_quit:
+                        if self.key_map.get(key_name) == self.fn_quit:
                             self.quit_by_quitcmd = True
                         logger.debug(f"in_key={key_name!r}")
                         click.echo(f"{ESQ_EL2}{key_name!r}\r", nl=False)
