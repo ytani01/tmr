@@ -52,13 +52,15 @@ class ProgressBar:
 
         str_on = str_off = str_cur = ""
 
-        # 風車
-        if on_len >= 1:
-            if val >= self.total or stop:
+        # 風車 (0% でも動作中であることを示す)
+        if val >= self.total or stop:
+            if on_len >= 1:
                 str_cur = self.ch_on
-            else:
-                str_cur = self.ch_head[self.ch_head_i]
-                self.ch_head_i = (self.ch_head_i + 1) % len(self.ch_head)
+        else:
+            str_cur = self.ch_head[self.ch_head_i]
+            self.ch_head_i = (self.ch_head_i + 1) % len(self.ch_head)
+            if on_len == 0:
+                off_len = max(0, off_len - 1)  # スピナー分を差し引く
 
         if on_len >= 2:
             str_on = self.ch_on * (on_len - 1)
