@@ -367,7 +367,9 @@ def test_display_hours(base_timer, mock_terminal):
     assert base_timer.col["elapsed"].value == "1:01:01"
 
 
-def test_alarm_quit_by_quitcmd(base_timer, mock_terminal, mock_click, mock_time):
+def test_alarm_quit_by_quitcmd(
+    base_timer, mock_terminal, mock_click, mock_time
+):
     """
     Verify that pressing 'q' during alarm sets quit_by_quitcmd = True.
     """
@@ -381,9 +383,7 @@ def test_alarm_quit_by_quitcmd(base_timer, mock_terminal, mock_click, mock_time)
     # Main loop: "" (no key, timer expires)
     # Alarm loop: "q" (quit key pressed)
     with patch.object(BaseTimer, "ring_alarm", return_value=mock_thread):
-        with patch.object(
-            BaseTimer, "get_key_name", side_effect=["", "q"]
-        ):
+        with patch.object(BaseTimer, "get_key_name", side_effect=["", "q"]):
             with patch("tmr.base_timer.Terminal.cbreak"):
                 base_timer.t_limit = 0.1
                 base_timer.main()
@@ -409,4 +409,3 @@ def test_display_pause_state(base_timer):
     base_timer.is_paused = True
     base_timer.display()
     assert base_timer.col["state"].value == "[PAUSE]"
-
