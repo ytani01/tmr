@@ -55,11 +55,13 @@ class BaseTimer:
 
     PBAR_LEN_MIN = 10
 
+    type AlarmParams = tuple[int, float, float]
+
     def __init__(
         self,
         title: tuple[str, str] = DEF_TITLE,
         t_limit: float = DEF_LIMIT,
-        arlarm_params: tuple[int, float, float] = (
+        alarm_params: AlarmParams = (
             COUNT_MANY,
             DEF_SEC1,
             DEF_SEC2,
@@ -68,7 +70,7 @@ class BaseTimer:
     ):
         """Constractor."""
         logger.debug(
-            f"title={title},limit={t_limit},alarm_params={arlarm_params}"
+            f"title={title},limit={t_limit},alarm_params={alarm_params}"
         )
 
         self.col: dict = self.col_list()
@@ -76,7 +78,7 @@ class BaseTimer:
         self.col["title"].value = title[0]
         self.col["title"].color = title[1]
         self.t_limit = t_limit
-        self.alarm_params = arlarm_params
+        self.alarm_params = alarm_params
         self.enable_next = enable_next
 
         self.t_start = 0.0

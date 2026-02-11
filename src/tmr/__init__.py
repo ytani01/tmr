@@ -33,4 +33,6 @@ __all__ = [
     "ESQ_CSR_ON",
     "ESQ_CSR_OFF",
     "ESQ_EL0",
+    "ESQ_EL1",
+    "ESQ_EL2",
 ]

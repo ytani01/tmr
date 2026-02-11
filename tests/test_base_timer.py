@@ -63,7 +63,7 @@ def test_initial_state(base_timer):
     assert base_timer.is_active is False
     assert base_timer.is_paused is False
     assert base_timer.alarm_active is False
-    assert base_timer.cmd_quit is False
+    assert base_timer.quit_by_quitcmd is False
 
 
 def test_fn_pause(base_timer):
@@ -89,7 +89,7 @@ def test_fn_quit(base_timer):
     assert base_timer.is_active is False
     assert base_timer.is_paused is False
     assert base_timer.alarm_active is False
-    assert base_timer.cmd_quit is True
+    assert base_timer.quit_by_quitcmd is True
 
 
 def test_fn_forward(base_timer, mock_time):
