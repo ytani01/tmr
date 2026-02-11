@@ -295,3 +295,118 @@ def test_ring_alarm_and_thread(base_timer, mock_click):
     base_timer.thr_alarm(1, 0.001, 0.001)
     assert mock_click.echo.called  # Should call '\a'
     assert base_timer.alarm_active is False
+
+
+def test_alarm_stop_by_key(base_timer, mock_terminal, mock_click, mock_time):
+    """
+    Verify alarm stops when a key is pressed.
+    """
+    base_timer.alarm_active = True
+
+    # Mock time.monotonic to advance time
+    # 1. init: 100.0
+    # 2. main loop 1: 110.0 (elapsed 10.0 > limit 0.1) -> Limit Reached
+    mock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    # Mock ring_alarm to return a dummy thread
+    mock_thread = MagicMock()
+
+    # Mock get_key_name:
+    # 1. Main Loop 1: "" (No key)
+    # 2. Alarm Loop 1: "KEY_ENTER" (Key pressed) -> Break
+
+    with patch.object(BaseTimer, "ring_alarm", return_value=mock_thread):
+        with patch.object(
+            BaseTimer, "get_key_name", side_effect=["", "KEY_ENTER"]
+        ):
+            with patch(
+                "tmr.base_timer.Terminal.cbreak"
+            ):  # mock cbreak context
+                base_timer.t_limit = 0.1
+
+                # Run main
+                base_timer.main()
+
+    assert base_timer.alarm_active is False
+    assert base_timer.quit_by_quitcmd is False
+    mock_thread.join.assert_called_once()
+
+
+def test_fn_next(base_timer):
+    """
+    Verify fn_next behavior with enable_next flag.
+    """
+    # Default: enable_next=False
+    base_timer.is_active = True
+    base_timer.fn_next()
+    assert base_timer.is_active is True  # Should not change
+
+    # Enable next
+    base_timer.enable_next = True
+    base_timer.fn_next()
+    assert base_timer.is_active is False
+    assert base_timer.quit_by_quitcmd is False
+
+
+def test_display_hours(base_timer, mock_terminal):
+    """
+    Verify time string formatting for duration >= 1 hour.
+    """
+    # 1 hour + 1 minute + 1 second = 3661 seconds
+    base_timer.t_limit = 3661.0
+    base_timer.t_elapsed = 0.0
+
+    # Run display to update columns
+    base_timer.display()
+
+    assert base_timer.col["limit"].value == "1:01:01"
+
+    # Check elapsed formatting as well
+    base_timer.t_elapsed = 3661.0
+    base_timer.display()
+    assert base_timer.col["elapsed"].value == "1:01:01"
+
+
+def test_alarm_quit_by_quitcmd(base_timer, mock_terminal, mock_click, mock_time):
+    """
+    Verify that pressing 'q' during alarm sets quit_by_quitcmd = True.
+    """
+    base_timer.alarm_active = True
+
+    # Advance time past limit
+    mock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    mock_thread = MagicMock()
+
+    # Main loop: "" (no key, timer expires)
+    # Alarm loop: "q" (quit key pressed)
+    with patch.object(BaseTimer, "ring_alarm", return_value=mock_thread):
+        with patch.object(
+            BaseTimer, "get_key_name", side_effect=["", "q"]
+        ):
+            with patch("tmr.base_timer.Terminal.cbreak"):
+                base_timer.t_limit = 0.1
+                base_timer.main()
+
+    assert base_timer.alarm_active is False
+    assert base_timer.quit_by_quitcmd is True
+    mock_thread.join.assert_called_once()
+
+
+def test_display_pause_state(base_timer):
+    """
+    Verify [PAUSE] is shown when timer is paused.
+    """
+    base_timer.t_limit = 60.0
+    base_timer.t_elapsed = 10.0
+
+    # Not paused
+    base_timer.is_paused = False
+    base_timer.display()
+    assert base_timer.col["state"].value == ""
+
+    # Paused
+    base_timer.is_paused = True
+    base_timer.display()
+    assert base_timer.col["state"].value == "[PAUSE]"
+

@@ -71,4 +71,76 @@ def test_pomodoro_cli_exec():
         assert isinstance(config_arg, PomodoroConfig)
         assert config_arg.cycles == 2
         # Verify run called
-        instance.run.assert_called_once()
+    instance.run.assert_called_once()
+
+
+def test_pomodoro_core_quit_in_work():
+    """Verify PomodoroCore quits correctly during Work"""
+    config = PomodoroConfig(
+        work_sec=0.1,
+        break_sec=0.1,
+        long_break_sec=0.1,
+        cycles=2,
+    )
+    core = PomodoroCore(config)
+
+    with mock.patch.object(core, "_run_timer") as mock_run_timer:
+        # 1st call (WORK) returns True (Quit)
+        mock_run_timer.side_effect = [True]
+
+        Quit = core.run()
+
+        assert Quit is True
+        assert mock_run_timer.call_count == 1
+        assert mock_run_timer.call_args[0][0] == "WORK"
+
+
+def test_pomodoro_core_quit_in_short_break():
+    """Verify PomodoroCore quits correctly during Short Break"""
+    config = PomodoroConfig(
+        work_sec=0.1,
+        break_sec=0.1,
+        long_break_sec=0.1,
+        cycles=2,
+    )
+    core = PomodoroCore(config)
+
+    with mock.patch.object(core, "_run_timer") as mock_run_timer:
+        # 1. Work -> False
+        # 2. Short Break -> True (Quit)
+        mock_run_timer.side_effect = [False, True]
+
+        Quit = core.run()
+
+        assert Quit is True
+        assert mock_run_timer.call_count == 2
+
+        calls = mock_run_timer.call_args_list
+        assert calls[0].args[0] == "WORK"
+        assert calls[1].args[0] == "SHORT_BREAK"
+
+
+def test_pomodoro_core_run_timer():
+    """Verify _run_timer implementation calls BaseTimer"""
+    config = PomodoroConfig(
+        work_sec=0.1,
+        break_sec=0.1,
+        long_break_sec=0.1,
+        cycles=1,
+    )
+    core = PomodoroCore(config)
+
+    with mock.patch("tmr.pomodoro.BaseTimer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.main.return_value = True  # Quit
+
+        # Call _run_timer directly
+        ret = core._run_timer("TEST", 10.0, "white")
+
+        assert ret is True
+        MockTimer.assert_called_once()
+        args = MockTimer.call_args
+        assert args[0][0] == ("TEST", "white")
+        assert args[0][1] == 10.0
+        assert args[1]["enable_next"] is True
+        instance.main.assert_called_once()
