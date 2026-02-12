@@ -358,7 +358,7 @@ class BaseTimer:
             """
             m, s = divmod(sec, SEC_MIN)
             if m < MIN_HOUR:
-                return f"{m:.0f}:{s:02.0f}"
+                return f"{m:02.0f}:{s:02.0f}"
 
             h, m = divmod(m, MIN_HOUR)
             return f"{h:.0f}:{m:02.0f}:{s:02.0f}"
