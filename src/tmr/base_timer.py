@@ -37,7 +37,13 @@ class TimerCmd:
 
 
 class BaseTimer:
-    """Base Timer."""
+    """Base Timer.
+
+    Note:
+        This class uses `loguru` for logging. It is recommended to initialize
+        the logger (e.g., using `tmr.mylog.loggerInit`) before using this class
+        to ensure logs are formatted correctly.
+    """
 
     IN_KEY_TIMEOUT = 0.2  # sec
 
@@ -58,6 +64,19 @@ class BaseTimer:
 
     PBAR_LEN_MIN = 10
 
+    # 表示項目の優先順位（低いものから削除される）
+    COL_PRIORITY = [
+        "remain",
+        "title",
+        "state",
+        "pbar",
+        "limit",
+        "rate",
+        "elapsed",
+        "time",
+        "date",
+    ]
+
     type AlarmParams = tuple[int, float, float]
 
     def __init__(
@@ -72,9 +91,7 @@ class BaseTimer:
         enable_next: bool = False,
     ):
         """Constructor."""
-        logger.debug(
-            f"title={title},limit={t_limit},alarm_params={alarm_params}"
-        )
+        logger.debug(f"title={title},limit={t_limit},alarm_params={alarm_params}")
 
         self.col: dict = self.col_list()
 
@@ -246,9 +263,7 @@ class BaseTimer:
         # タイマー満了、または、終了
         key_name = ""
         thr = None
-        if (
-            thr := self.ring_alarm()
-        ):  # アラーム alarm_active によっては鳴らない
+        if thr := self.ring_alarm():  # アラーム alarm_active によっては鳴らない
             try:
                 with self.term.cbreak():
                     while self.alarm_active:
@@ -288,9 +303,7 @@ class BaseTimer:
         if not in_key:
             return ""
 
-        logger.debug(
-            f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
-        )
+        logger.debug(f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}")
 
         key_name = ""
         if in_key.name:
@@ -393,18 +406,8 @@ class BaseTimer:
                 if t_rate >= self.PERCENT_COLOR[c]:
                     col.color = c
 
-        # 表示項目：優先順
-        col_disp = [
-            "remain",
-            "title",
-            "state",
-            "pbar",
-            "limit",
-            "rate",
-            "elapsed",
-            "time",
-            "date",
-        ]
+        # 表示項目（コピーを作成して操作）
+        col_disp = self.COL_PRIORITY[:]
         for c in self.col:
             self.col[c].use = True
 
