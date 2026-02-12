@@ -47,6 +47,9 @@ class BaseTimer:
     DEF_SEC1 = 0.5
     DEF_SEC2 = 1.5
 
+    STAT_STR_PAUSE = "[PAUSE]"
+    STAT_STR_TIMEUP = "[TIME UP]"
+
     PERCENT_COLOR = {
         "white": 0,
         "yellow": 80,
@@ -247,10 +250,6 @@ class BaseTimer:
         ):  # アラーム alarm_active によっては鳴らない
             key_name = ""
             try:
-                # click.secho(
-                #     "[Press any key]\r", bold=True, blink=True, nl=False
-                # )
-
                 with self.term.cbreak():
                     while self.alarm_active:
                         key_name = self.get_key_name()
@@ -373,9 +372,9 @@ class BaseTimer:
         ## col["state"]
         self.col["state"].value = ""
         if self.is_paused:
-            self.col["state"].value = "[PAUSE]"
+            self.col["state"].value = self.STAT_STR_PAUSE
         if self.t_elapsed >= self.t_limit and self.alarm_active:
-            self.col["state"].value = "[TIME UP]"
+            self.col["state"].value = self.STAT_STR_TIMEUP
 
         ## col["rate"]
         t_rate = self.t_elapsed / self.t_limit * 100

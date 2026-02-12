@@ -15,6 +15,8 @@ class PomodoroConfig:
 
 
 class PomodoroTimer:
+    """Pomodoro Timer"""
+
     def __init__(self, config: PomodoroConfig):
         self.config = config
 
@@ -22,7 +24,7 @@ class PomodoroTimer:
         """ポモドーロサイクルの実行
 
         Returns:
-            bool: ユーザ中断(quit)があった場合は True、それ以外は False
+            bool: ユーザが中断(quit)した場合は True、それ以外は False
         """
         while True:
             for i in range(self.config.cycles):
