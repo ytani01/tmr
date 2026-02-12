@@ -71,7 +71,7 @@ class BaseTimer:
         ),
         enable_next: bool = False,
     ):
-        """Constractor."""
+        """Constructor."""
         logger.debug(
             f"title={title},limit={t_limit},alarm_params={alarm_params}"
         )
@@ -244,11 +244,11 @@ class BaseTimer:
                         self.alarm_active = True
 
         # タイマー満了、または、終了
+        key_name = ""
         thr = None
         if (
             thr := self.ring_alarm()
         ):  # アラーム alarm_active によっては鳴らない
-            key_name = ""
             try:
                 with self.term.cbreak():
                     while self.alarm_active:

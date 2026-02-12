@@ -21,7 +21,7 @@ class ProgressBar:
         ch: tuple[str, str] = (DEF_CH_ON, DEF_CH_OFF),
         ch_head: list[str] = DEF_CH_HEAD,
     ):
-        """Constractor."""
+        """Constructor."""
         logger.debug(f"total={total}")
 
         self.bar_len: int = bar_length

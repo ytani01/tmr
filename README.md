@@ -17,7 +17,7 @@
 
 - mise: 開発用パッケージ管理
 - uv: Pythonプロジェクト管理
-
+- Python 3.13+
 
 ## == Install
 
@@ -39,14 +39,18 @@ uv tool install -U .
 ポモドーロタイマーでは、quitすると次のフェーズに移ります。
 ポモドーロタイマーを終了する場合は、強制終了してください。
 
-- **quit**: [q], [ESC]
-- **強制終了**: [Ctrl]+[C]
-- **pause**: [p], [SPACE], [ENTER]
-- **forward 1 second**: "+", [RIGHT], [Ctrl]+[F]
-- **forward 10 seconds**: [DOWN], [Ctrl]+[N]
-- **backward 1 second**: "-", [LEFT], [Ctrl]+[B]
-- **backwawrd 10 seconds**: [UP], [Ctrl]+[P]
-- **clear terminal**: [Ctrl]+[L]
+```
+COMMAND LIST:
+  [p], [P], [SPACE]             : Pause timer.
+  [+], [=], [RIGHT], [CTRL_F]   : Forward 1 second.
+  [-], [_], [LEFT], [CTRL_B]    : Backward 1 second.
+  [DOWN], [CTRL_N]              : Forward 10 seconds.
+  [UP], [CTRL_P]                : Backward 10 seconds.
+  [CTRL_L]                      : Clear terminal.
+  [n], [N], [ENTER]             : Next.
+  [q], [Q], [ESCAPE]            : Quit.
+  [h], [H], [?]                 : Help.
+```
 
 
 ```bash
