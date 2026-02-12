@@ -78,7 +78,8 @@ def timer(
     loggerInit(debug)
     logger.debug(f"command='{ctx.command.name}'")
     logger.debug(
-        f"minutes={minutes},title={title},title_color={title_color}"
+        f"minutes={minutes},"
+        f"title={title!r},title_color={title_color!r},"
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
     )
 
