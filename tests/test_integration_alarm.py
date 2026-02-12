@@ -2,7 +2,7 @@
 # (c) 2026 Yoichi Tanibayashi
 #
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from tmr.base_timer import BaseTimer
 

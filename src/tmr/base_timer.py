@@ -91,7 +91,9 @@ class BaseTimer:
         enable_next: bool = False,
     ):
         """Constructor."""
-        logger.debug(f"title={title},limit={t_limit},alarm_params={alarm_params}")
+        logger.debug(
+            f"title={title},limit={t_limit},alarm_params={alarm_params}"
+        )
 
         self.col: dict = self.col_list()
 
@@ -263,7 +265,9 @@ class BaseTimer:
         # タイマー満了、または、終了
         key_name = ""
         thr = None
-        if thr := self.ring_alarm():  # アラーム alarm_active によっては鳴らない
+        if (
+            thr := self.ring_alarm()
+        ):  # アラーム alarm_active によっては鳴らない
             try:
                 with self.term.cbreak():
                     while self.alarm_active:
@@ -303,7 +307,9 @@ class BaseTimer:
         if not in_key:
             return ""
 
-        logger.debug(f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}")
+        logger.debug(
+            f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
+        )
 
         key_name = ""
         if in_key.name:
