@@ -24,8 +24,24 @@ def cli(ctx, debug):
 @click.command()
 @click.argument("minutes", type=int, nargs=1)
 @click.option(
-    "--alarm-count",
+    "--title",
+    "-t",
+    type=str,
+    default="Timer",
+    show_default=True,
+    help="alarm title",
+)
+@click.option(
+    "--title-color",
+    "--color",
     "-c",
+    type=str,
+    default="blue",
+    show_default=True,
+    help="title color",
+)
+@click.option(
+    "--alarm-count",
     type=int,
     default=999,
     show_default=True,
@@ -48,12 +64,21 @@ def cli(ctx, debug):
     help="alarm sec2",
 )
 @click_common_opts(__version__)
-def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
+def timer(
+    ctx,
+    minutes,
+    title,
+    title_color,
+    alarm_count,
+    alarm_sec1,
+    alarm_sec2,
+    debug,
+):
     """Simple Timer."""
     loggerInit(debug)
     logger.debug(f"command='{ctx.command.name}'")
     logger.debug(
-        f"minutes={minutes},"
+        f"minutes={minutes},title={title},title_color={title_color}"
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
     )
 
@@ -61,7 +86,7 @@ def timer(ctx, minutes, alarm_count, alarm_sec1, alarm_sec2, debug):
 
     with TerminalContext():
         _ = BaseTimer(
-            ("Timer", "blue"), limit, (alarm_count, alarm_sec1, alarm_sec2)
+            (title, title_color), limit, (alarm_count, alarm_sec1, alarm_sec2)
         ).main()
 
 
