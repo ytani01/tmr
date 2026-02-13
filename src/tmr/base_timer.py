@@ -411,10 +411,7 @@ class BaseTimer:
 
         ## col["rate"]
         t_rate = self.t_elapsed / self.t_limit * 100
-        # パーセント表示で、通常は小数点1位まで、100%だけ "100%" にしたい
-        self.col["rate"].value = (
-            "(100%)" if (p := round(t_rate, 1)) == 100 else f"({p:.1f}%)"
-        )
+        self.col["rate"].value = f"({round(t_rate, 1):05.1f}%)"
 
         ## t_rate に応じて色を変更
         for c in self.col:
