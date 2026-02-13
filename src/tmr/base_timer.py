@@ -486,14 +486,10 @@ class BaseTimer:
         logger.debug(f"count={count},sec1={sec1},sec2={sec2}")
 
         for _ in range(count):
-            if not self.alarm_active:
-                logger.debug(f"alarm_active={self.alarm_active}")
-                break
-
-            click.echo("\a", nl=False)
-            time.sleep(sec1)
-            click.echo("\a", nl=False)
-            time.sleep(sec2)
+            for s in [sec1, sec2]:
+                if self.alarm_active:
+                    click.echo("\a", nl=False)
+                    time.sleep(s)
 
         self.alarm_active = False
 
