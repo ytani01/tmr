@@ -193,7 +193,7 @@ def test_get_key_name(base_timer, mock_terminal):
     mock_key.name = None
     # Use setattr to avoid lint errors with static analyzers
     setattr(mock_key, "__str__", MagicMock(return_value="p"))
-    assert base_timer.get_key_name() == "p"
+    assert base_timer.get_key_name() == "P"
 
     # Timeout (no key)
     base_timer.term.inkey.return_value = None
@@ -205,9 +205,9 @@ def test_key_mapping(base_timer):
     Verify that keys are mapped to the correct functions.
     """
     # Check some key mappings
-    assert base_timer.key_map["p"] == base_timer.fn_pause
+    assert base_timer.key_map["P"] == base_timer.fn_pause
     assert base_timer.key_map[" "] == base_timer.fn_pause
-    assert base_timer.key_map["q"] == base_timer.fn_quit
+    assert base_timer.key_map["Q"] == base_timer.fn_quit
     assert base_timer.key_map["KEY_ESCAPE"] == base_timer.fn_quit
 
 
@@ -240,7 +240,7 @@ def test_keys_str(base_timer):
     """
     Verify keys_str formatting.
     """
-    assert base_timer.keys_str(["p", " "]) == "[p], [SPACE]"
+    assert base_timer.keys_str(["P", " "]) == "[P], [SPACE]"
     assert base_timer.keys_str(["KEY_ENTER"]) == "[ENTER]"
 
 
@@ -381,9 +381,9 @@ def test_alarm_quit_by_quitcmd(
     mock_thread = MagicMock()
 
     # Main loop: "" (no key, timer expires)
-    # Alarm loop: "q" (quit key pressed)
+    # Alarm loop: "Q" (quit key pressed)
     with patch.object(BaseTimer, "ring_alarm", return_value=mock_thread):
-        with patch.object(BaseTimer, "get_key_name", side_effect=["", "q"]):
+        with patch.object(BaseTimer, "get_key_name", side_effect=["", "Q"]):
             with patch("tmr.base_timer.Terminal.cbreak"):
                 base_timer.t_limit = 0.1
                 base_timer.main()
