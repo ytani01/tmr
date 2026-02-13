@@ -147,7 +147,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
 
     timer = PomodoroTimer(config)
 
-    click.echo("[?] for help")
+    click.echo("Start Pomodoro Timer: [?] for help")
 
     with TerminalContext():
         timer.run()

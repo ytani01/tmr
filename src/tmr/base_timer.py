@@ -143,31 +143,31 @@ class BaseTimer:
             TimerCmd(
                 name="pause",
                 info="Pause timer.",
-                keys=["p", "P", " "],
+                keys=["P", " "],
                 fn=self.fn_pause,
             ),
             TimerCmd(
                 name="forward1",
                 info="Forward 1 second.",
-                keys=["+", "=", "KEY_RIGHT", "KEY_CTRL_F"],
+                keys=["+", "=", "KEY_RIGHT", "KEY_CTRL_F", "L"],
                 fn=lambda: self.fn_forward(1.0),
             ),
             TimerCmd(
                 name="backward1",
                 info="Backward 1 second.",
-                keys=["-", "_", "KEY_LEFT", "KEY_CTRL_B"],
+                keys=["-", "KEY_LEFT", "KEY_CTRL_B", "H"],
                 fn=lambda: self.fn_backward(1.0),
             ),
             TimerCmd(
                 name="forward10",
                 info="Forward 10 seconds.",
-                keys=["KEY_DOWN", "KEY_CTRL_N"],
+                keys=["KEY_DOWN", "KEY_CTRL_N", "J"],
                 fn=lambda: self.fn_forward(10.0),
             ),
             TimerCmd(
                 name="bk10",
                 info="Backward 10 seconds.",
-                keys=["KEY_UP", "KEY_CTRL_P"],
+                keys=["KEY_UP", "KEY_CTRL_P", "K"],
                 fn=lambda: self.fn_backward(10.0),
             ),
             TimerCmd(
@@ -179,19 +179,19 @@ class BaseTimer:
             TimerCmd(
                 name="next",
                 info="Next.",
-                keys=["n", "N", "KEY_ENTER"],
+                keys=["N", "KEY_ENTER"],
                 fn=self.fn_next,
             ),
             TimerCmd(
                 name="quit",
                 info="Quit.",
-                keys=["q", "Q", "KEY_ESCAPE"],
+                keys=["Q", "KEY_ESCAPE"],
                 fn=self.fn_quit,
             ),
             TimerCmd(
                 name="help",
                 info="Help.",
-                keys=["h", "H", "?"],
+                keys=["?"],
                 fn=self.fn_help,
             ),
         ]
@@ -200,17 +200,23 @@ class BaseTimer:
         """Keys string."""
         ret_str = ""
         for k in key_list:
-            k_str = f"[{k}]"
-            if k == " ":
-                k_str = "[SPACE]"
-            if k.startswith("KEY_"):
-                k_str = f"[{k[4:]}]"
+            k_str = ""
+            for w in k.split('_'):
+                if w == "KEY":
+                    continue
+                if w == "CTRL":
+                    k_str += "<Crl>-"
+                    continue
+                if w == "SHIFT":
+                    k_str += "<Shift>-"
+                    continue
+                k_str += f"[{w}]"
             ret_str += k_str + ", "
         return ret_str[:-2]
 
     def mk_cmd_str(self, cmd: TimerCmd):
         """Make command str."""
-        ret = f"{self.keys_str(cmd.keys):<30}: {cmd.info}"
+        ret = f"{self.keys_str(cmd.keys):<35}: {cmd.info}"
         return ret
 
     def main(self) -> bool:
@@ -238,7 +244,7 @@ class BaseTimer:
                 # キー入力
                 key_name = self.get_key_name()
                 if key_name:
-                    logger.debug(f"key_name={key_name}")
+                    logger.debug(f"key_name=[{key_name}]")
 
                 # キーマップに登録されているメソッドを呼び出す
                 if key_name in self.key_map:
@@ -275,7 +281,7 @@ class BaseTimer:
                         if not key_name:
                             self.display()
                             continue
-                        logger.debug(f"in_key={key_name!r}")
+                        logger.debug(f"in_key=[{key_name}]")
                         break
             finally:
                 pass
@@ -284,7 +290,7 @@ class BaseTimer:
         self.display()
         click.echo()
 
-        click.echo(f"{ESQ_EL2}{key_name!r}\r", nl=False)
+        click.echo(f"{ESQ_EL2}[{key_name}]\r", nl=False)
 
         if self.key_map.get(key_name) == self.fn_quit:
             self.quit_by_quitcmd = True
@@ -316,6 +322,8 @@ class BaseTimer:
             key_name = in_key.name
         else:
             key_name = str(in_key)
+            if key_name.islower():
+                key_name = key_name.upper()
         logger.debug(f"key_name='{key_name}'")
 
         return key_name
@@ -323,7 +331,7 @@ class BaseTimer:
     def fn_help(self):
         """Quit."""
         logger.debug("")
-        click.echo(f"{ESQ_EL2}COMMAND LIST:")
+        click.echo(f"{ESQ_EL2}COMMAND LIST")
         for c in self.cmd:
             if c.name == "next" and not self.enable_next:
                 continue
