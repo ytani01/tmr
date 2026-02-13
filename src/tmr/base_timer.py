@@ -201,7 +201,7 @@ class BaseTimer:
         ret_str = ""
         for k in key_list:
             k_str = ""
-            for w in k.split('_'):
+            for w in k.split("_"):
                 if w == "KEY":
                     continue
                 if w == "CTRL":
