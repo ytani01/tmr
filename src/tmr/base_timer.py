@@ -147,28 +147,28 @@ class BaseTimer:
                 fn=self.fn_pause,
             ),
             TimerCmd(
-                name="forward1",
-                info="Forward 1 second.",
-                keys=["+", "=", "KEY_RIGHT", "KEY_CTRL_F", "L"],
-                fn=lambda: self.fn_forward(1.0),
-            ),
-            TimerCmd(
                 name="backward1",
                 info="Backward 1 second.",
-                keys=["-", "KEY_LEFT", "KEY_CTRL_B", "H"],
+                keys=["KEY_LEFT", "KEY_CTRL_B", "H", "-", "KEY_BACKSPACE"],
                 fn=lambda: self.fn_backward(1.0),
             ),
             TimerCmd(
-                name="forward10",
-                info="Forward 10 seconds.",
-                keys=["KEY_DOWN", "KEY_CTRL_N", "J"],
-                fn=lambda: self.fn_forward(10.0),
+                name="forward1",
+                info="Forward 1 second.",
+                keys=["KEY_RIGHT", "KEY_CTRL_F", "L", "+", "="],
+                fn=lambda: self.fn_forward(1.0),
             ),
             TimerCmd(
                 name="bk10",
                 info="Backward 10 seconds.",
                 keys=["KEY_UP", "KEY_CTRL_P", "K"],
                 fn=lambda: self.fn_backward(10.0),
+            ),
+            TimerCmd(
+                name="forward10",
+                info="Forward 10 seconds.",
+                keys=["KEY_DOWN", "KEY_CTRL_N", "J"],
+                fn=lambda: self.fn_forward(10.0),
             ),
             TimerCmd(
                 name="clear",
@@ -196,19 +196,25 @@ class BaseTimer:
             ),
         ]
 
+    KEY_WORD_MAP = {
+        "KEY": "",
+        "CTRL": "[Ctrl]+",
+        "SHIFT": "[Shift]+",
+        " ": "[SPACE]",
+        "RIGHT": "[]",
+        "LEFT": "[]",
+        "UP": "[]",
+        "DOWN": "[]",
+    }
+
     def keys_str(self, key_list: list[str]) -> str:
         """Keys string."""
         ret_str = ""
         for k in key_list:
             k_str = ""
             for w in k.split("_"):
-                if w == "KEY":
-                    continue
-                if w == "CTRL":
-                    k_str += "<Crl>-"
-                    continue
-                if w == "SHIFT":
-                    k_str += "<Shift>-"
+                if w in self.KEY_WORD_MAP:
+                    k_str += self.KEY_WORD_MAP[w]
                     continue
                 k_str += f"[{w}]"
             ret_str += k_str + ", "
@@ -216,7 +222,7 @@ class BaseTimer:
 
     def mk_cmd_str(self, cmd: TimerCmd):
         """Make command str."""
-        ret = f"{self.keys_str(cmd.keys):<35}: {cmd.info}"
+        ret = f"{self.keys_str(cmd.keys):<40}: {cmd.info}"
         return ret
 
     def main(self) -> bool:
