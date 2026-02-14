@@ -383,21 +383,26 @@ class BaseTimer:
         t_remain = max(self.t_limit - self.t_elapsed, 0)
 
         # 表示文字列パーツの生成
-        def t_str(sec: int | float) -> str:
+        def t_str(sec: int | float, omit_sec: bool = False) -> str:
             """Time string.
 
             sec -> "M:SS"
             """
             m, s = divmod(sec, SEC_MIN)
             if m < MIN_HOUR:
-                return f"{m:02.0f}:{s:02.0f}"
+                if omit_sec and s == 0:
+                    return f"{m:2.0f}m"
+                return f"{m:2.0f}m{s:02.0f}s"
 
             h, m = divmod(m, MIN_HOUR)
-            return f"{h:.0f}:{m:02.0f}:{s:02.0f}"
+            if omit_sec and s == 0:
+                return f"{h:.0f}h{m:02.0f}m"
+
+            return f"{h:.0f}h{m:02.0f}m{s:02.0f}s"
 
         self.col["date"].value = f"{time.strftime('%Y-%m-%d')}"
         self.col["time"].value = f"{time.strftime('%H:%M:%S')}"
-        self.col["limit"].value = t_str(self.t_limit)
+        self.col["limit"].value = t_str(self.t_limit, omit_sec=True)
         self.col["elapsed"].value = t_str(self.t_elapsed)
         self.col["remain"].value = t_str(t_remain)
         self.col["pbar"].value = "-" * self.PBAR_LEN_MIN  # 仮の値
@@ -411,7 +416,7 @@ class BaseTimer:
 
         ## col["rate"]
         t_rate = self.t_elapsed / self.t_limit * 100
-        self.col["rate"].value = f"({round(t_rate, 1):05.1f}%)"
+        self.col["rate"].value = f"{round(t_rate, 1):5.1f}%"
 
         ## t_rate に応じて色を変更
         for c in self.col:

@@ -359,12 +359,12 @@ def test_display_hours(base_timer, mock_terminal):
     # Run display to update columns
     base_timer.display()
 
-    assert base_timer.col["limit"].value == "1:01:01"
+    assert base_timer.col["limit"].value == "1h01m01s"
 
     # Check elapsed formatting as well
     base_timer.t_elapsed = 3661.0
     base_timer.display()
-    assert base_timer.col["elapsed"].value == "1:01:01"
+    assert base_timer.col["elapsed"].value == "1h01m01s"
 
 
 def test_alarm_quit_by_quitcmd(
