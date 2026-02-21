@@ -208,7 +208,12 @@ class BaseTimer:
     }
 
     def keys_str(self, key_list: list[str]) -> str:
-        """Keys string."""
+        """Keys list to string names.
+
+        [CTR_X] --> [Ctrl]+[x]
+        [LEFT] --> []
+        [KEY_ENTER] --> [ENTER]
+        """
         ret_str = ""
         for k in key_list:
             k_str = ""
@@ -296,7 +301,7 @@ class BaseTimer:
         self.display()
         click.echo()
 
-        click.echo(f"{ESQ_EL2}[{key_name}]\r", nl=False)
+        click.echo(f"{ESQ_EL2}{self.keys_str([key_name])}\r", nl=False)
 
         if self.key_map.get(key_name) == self.fn_quit:
             self.quit_by_quitcmd = True
