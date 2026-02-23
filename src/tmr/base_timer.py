@@ -201,10 +201,10 @@ class BaseTimer:
         "CTRL": "[Ctrl]+",
         "SHIFT": "[Shift]+",
         " ": "[SPACE]",
-        "RIGHT": "[]",
-        "LEFT": "[]",
-        "UP": "[]",
-        "DOWN": "[]",
+        "RIGHT": "[→]",
+        "LEFT": "[←]",
+        "UP": "[↑]",
+        "DOWN": "[↓]",
     }
 
     def keys_str(self, key_list: list[str]) -> str:

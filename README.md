@@ -7,10 +7,10 @@
 
 
 ## == 特徴
-- **TUIによる進捗表示**: プログレスバーで残り時間を視覚的に把握できます。
-- **レスポンシブ対応**: ターミナルのサイズが変化したらリアルタイムに追従します。画面幅が狭いと、表示項目を省き、画面が崩れないようにします。
+- **プログレスバーによる進捗表示**: 残り時間を視覚的に把握できます。
+- **レスポンシブ対応**: ターミナルのサイズが変化すると、リアルタイムに追従します。画面幅が狭い場合は、表示項目を省き、表示が崩れないようにします。
 - **カスタマイズ可能**: 作業時間、休憩時間、サイクル数を自由に変更できます。
-- **柔軟な機能**: タイマー動作中に時間を進めたり、戻ししたり、ポーズしたりできます。
+- **柔軟な機能**: タイマー動作中に時間を進めたり、戻したり、ポーズしたりできます。
 
 
 ## == Requirement
@@ -40,25 +40,23 @@ uv tool install -U .
 ポモドーロタイマーを終了する場合は、強制終了してください。
 
 ```
-COMMAND LIST:
-  [p], [P], [SPACE]             : Pause timer.
-  [+], [=], [RIGHT], [CTRL_F]   : Forward 1 second.
-  [-], [_], [LEFT], [CTRL_B]    : Backward 1 second.
-  [DOWN], [CTRL_N]              : Forward 10 seconds.
-  [UP], [CTRL_P]                : Backward 10 seconds.
-  [CTRL_L]                      : Clear terminal.
-  [n], [N], [ENTER]             : Next.
-  [q], [Q], [ESCAPE]            : Quit.
-  [h], [H], [?]                 : Help.
+COMMAND LIST
+  [P], [SPACE]                            : Pause timer.
+  [←], [Ctrl]+[B], [H], [-], [BACKSPACE]  : Backward 1 second.
+  [→], [Ctrl]+[F], [L], [+], [=]          : Forward 1 second.
+  [↑], [Ctrl]+[P], [K]                    : Backward 10 seconds.
+  [↓], [Ctrl]+[N], [J]                    : Forward 10 seconds.
+  [Ctrl]+[L]                              : Clear terminal.
+  [N], [ENTER]                            : Next.
+  [Q], [ESCAPE]                           : Quit.
+  [?]                                     : Help.
 ```
 
 
 ```bash
-uv run tmr --help
-
 Usage: tmr [OPTIONS] COMMAND [ARGS]...
 
-  Cli.
+  Timer CLI.
 
 Options:
   -V, -v, --version  Show the version and exit.
