@@ -124,7 +124,7 @@ class BaseTimer:
     def col_list(self) -> dict[str, TimerCol]:
         """Column list."""
         logger.debug("")
-        return {  # **重要**: 表示順にすること。TBD:明示的にソートの必要性
+        return {  # **重要**: **表示順**にすること。TBD:明示的にソートの必要性
             "date": TimerCol(),
             "time": TimerCol(),
             "title": TimerCol(bold=True),
@@ -485,6 +485,9 @@ class BaseTimer:
             f_blink = False
             c = self.col[col_key]
             if c.use:
+                if not c.value:
+                    continue
+
                 if c.pause_blink and self.is_paused:
                     f_blink = True
                 if col_key == "state" and self.t_elapsed >= self.t_limit:
@@ -496,10 +499,10 @@ class BaseTimer:
                     bold=c.bold,
                     blink=f_blink,
                 )
-                if c.value:
-                    str_disp += " "
+                str_disp += " "
 
         # 表示 ([:-1] .. 行末の " " は表示しない)
+        logger.debug(f"str_disp={str_disp!r}")
         click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):
