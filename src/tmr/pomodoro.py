@@ -29,21 +29,21 @@ class PomodoroTimer:
         while True:
             for i in range(self.config.cycles):
                 # Work
-                tt = f"WORK({i + 1}/{self.config.cycles})"
+                tt = f"WORK:{i + 1}/{self.config.cycles}"
                 if self._run_timer(f"{tt:16s}", self.config.work_sec, "cyan"):
                     return True  # Quit
 
                 # Break
                 if i < self.config.cycles - 1:
                     # Short Break
-                    tt = f"SHORT_BREAK({i + 1}/{self.config.cycles})"
+                    tt = f"SHORT_BREAK:{i + 1}/{self.config.cycles}"
                     if self._run_timer(
                         f"{tt:16s}", self.config.break_sec, "yellow"
                     ):
                         return True  # Quit
                 else:
                     # Long Break
-                    tt = f"LONG_BREAK({i + 1}/{self.config.cycles})"
+                    tt = f"LONG_BREAK:{i + 1}/{self.config.cycles}"
                     if self._run_timer(
                         f"{tt:16s}", self.config.long_break_sec, "red"
                     ):
