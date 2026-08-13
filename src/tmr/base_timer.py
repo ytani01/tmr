@@ -3,15 +3,17 @@
 #
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, List
 
 import click
 from blessed import Terminal
-from loguru import logger
 
 from . import ESQ_EL2, MIN_HOUR, SEC_MIN
+from .mylog import getLogger
 from .progress_bar import ProgressBar
+
+_log = getLogger("BaseTimer")
 
 
 @dataclass
@@ -91,7 +93,7 @@ class BaseTimer:
         enable_next: bool = False,
     ):
         """Constructor."""
-        logger.debug(
+        _log.debug(
             f"title={title},limit={t_limit},alarm_params={alarm_params}"
         )
 
@@ -114,16 +116,16 @@ class BaseTimer:
         self.pbar = ProgressBar(self.t_limit)
 
         self.term = Terminal()
-        logger.debug(f"term size:{self.term.width}x{self.term.height}")
+        _log.debug(f"term size:{self.term.width}x{self.term.height}")
 
-        self.cmd: List[TimerCmd] = self.cmd_list()
+        self.cmd: list[TimerCmd] = self.cmd_list()
         # self.cmd を {"key": fn} の形式に展開する。
         # fn = self.key_map["key"] となる。
         self.key_map = {k: item.fn for item in self.cmd for k in item.keys}
 
     def col_list(self) -> dict[str, TimerCol]:
         """Column list."""
-        logger.debug("")
+        _log.debug("")
         return {  # **重要**: **表示順**にすること。TBD:明示的にソートの必要性
             "date": TimerCol(),
             "time": TimerCol(),
@@ -136,9 +138,9 @@ class BaseTimer:
             "remain": TimerCol(rate_color=True, pause_blink=True),
         }
 
-    def cmd_list(self) -> List[TimerCmd]:
+    def cmd_list(self) -> list[TimerCmd]:
         """Get command list as dataclass instances."""
-        logger.debug("")
+        _log.debug("")
         return [
             TimerCmd(
                 name="pause",
@@ -236,7 +238,7 @@ class BaseTimer:
         Return:
             bool: quitコマンドで終了した場合は True
         """
-        logger.debug("start.")
+        _log.debug("start.")
 
         self.t_start = time.monotonic()
         self.t_elapsed = 0.0
@@ -248,14 +250,14 @@ class BaseTimer:
             # メインループ
             while self.is_active:
                 # if self.term.width != prev_term_width:
-                #     logger.debug(f"term.width={self.term.width}")
+                #     _log.debug(f"term.width={self.term.width}")
                 #     prev_term_width = self.term.width
                 #     click.echo(f"{ESQ_EL2}")
 
                 # キー入力
                 key_name = self.get_key_name()
                 if key_name:
-                    logger.debug(f"key_name=[{key_name}]")
+                    _log.debug(f"key_name=[{key_name}]")
 
                 # キーマップに登録されているメソッドを呼び出す
                 if key_name in self.key_map:
@@ -292,7 +294,7 @@ class BaseTimer:
                         if not key_name:
                             self.display()
                             continue
-                        logger.debug(f"in_key=[{key_name}]")
+                        _log.debug(f"in_key=[{key_name}]")
                         break
             finally:
                 pass
@@ -310,7 +312,7 @@ class BaseTimer:
             thr.join()
         click.echo(f"{ESQ_EL2}\r", nl=False)
 
-        logger.debug("done.")
+        _log.debug("done.")
         return self.quit_by_quitcmd
 
     def get_key_name(self) -> str:
@@ -324,7 +326,7 @@ class BaseTimer:
         if not in_key:
             return ""
 
-        logger.debug(
+        _log.debug(
             f"Raw: {in_key!r}, Code: {in_key.code}, Name: {in_key.name}"
         )
 
@@ -335,13 +337,13 @@ class BaseTimer:
             key_name = str(in_key)
             if key_name.islower():
                 key_name = key_name.upper()
-        logger.debug(f"key_name='{key_name}'")
+        _log.debug(f"key_name='{key_name}'")
 
         return key_name
 
     def fn_help(self):
         """Quit."""
-        logger.debug("")
+        _log.debug("")
         click.echo(f"{ESQ_EL2}COMMAND LIST")
         for c in self.cmd:
             if c.name == "next" and not self.enable_next:
@@ -351,7 +353,7 @@ class BaseTimer:
 
     def fn_quit(self):
         """Quit."""
-        logger.debug("")
+        _log.debug("")
         self.is_active = False
         self.is_paused = False
         self.alarm_active = False
@@ -359,7 +361,7 @@ class BaseTimer:
 
     def fn_next(self):
         """Quit and next."""
-        logger.debug("")
+        _log.debug("")
         if not self.enable_next:
             return
 
@@ -369,10 +371,10 @@ class BaseTimer:
 
     def fn_pause(self):
         self.is_paused = not self.is_paused
-        logger.debug(f"is_paused={self.is_paused}")
+        _log.debug(f"is_paused={self.is_paused}")
 
     def fn_forward(self, sec: float = 1.0):
-        logger.debug(f"sec={sec}")
+        _log.debug(f"sec={sec}")
         t_cur = time.monotonic()
         self.t_start = max(self.t_start - sec, t_cur - self.t_limit)
         self.t_elapsed = t_cur - self.t_start
@@ -384,11 +386,11 @@ class BaseTimer:
 
     def display(self):
         """Display."""
-        # logger.debug("")
+        # _log.debug("")
         t_remain = max(self.t_limit - self.t_elapsed, 0)
 
         # 表示文字列パーツの生成
-        def t_str(sec: int | float, omit_sec: bool = False) -> str:
+        def t_str(sec: float, omit_sec: bool = False) -> str:
             """Time string.
 
             sec -> "M:SS"
@@ -441,21 +443,21 @@ class BaseTimer:
         # 行の長さを計算する関数
         def all_len(cols: list[str]) -> int:
             """Calculate length."""
-            # logger.debug(f"cols={cols}")
+            # _log.debug(f"cols={cols}")
             _len = 0
             for c in cols:
                 val = self.col[c].value
                 if val:
                     _len += len(val) + 1
-                # logger.debug(f"'{val}' {_len}")
+                # _log.debug(f"'{val}' {_len}")
             _len -= 1 if _len > 0 else 0
-            # logger.debug(f"all_len={_len}")
+            # _log.debug(f"all_len={_len}")
             return _len
 
         # 長過ぎる場合、優先度に応じて表示する項目を省略する
         while all_len(col_disp) > self.term.width:
             c_name = col_disp.pop()  # 最低優先度項目抜く
-            # logger.debug(f"c_name={c_name},c_priority={col_disp}")
+            # _log.debug(f"c_name={c_name},c_priority={col_disp}")
             self.col[c_name].use = False
 
         if not col_disp:
@@ -468,7 +470,7 @@ class BaseTimer:
             # プログレスバーの長さ
             col_disp.remove("pbar")
             pbar_len = self.term.width - all_len(col_disp) - 1
-            # logger.debug(f"pbar_len={pbar_len}")
+            # _log.debug(f"pbar_len={pbar_len}")
 
             # ポーズ中・終了時は、風車を止める
             pbar_stop = self.is_paused or (not self.is_active)
@@ -502,12 +504,12 @@ class BaseTimer:
                 str_disp += " "
 
         # 表示 ([:-1] .. 行末の " " は表示しない)
-        logger.debug(f"str_disp={str_disp!r}")
+        _log.debug(f"str_disp={str_disp!r}")
         click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""
-        logger.debug(f"count={count},sec1={sec1},sec2={sec2}")
+        _log.debug(f"count={count},sec1={sec1},sec2={sec2}")
 
         for _ in range(count):
             for s in [sec1, sec2]:
@@ -522,7 +524,7 @@ class BaseTimer:
 
         make thread and start.
         """
-        logger.debug(f"alarm_params={self.alarm_params}")
+        _log.debug(f"alarm_params={self.alarm_params}")
 
         if not self.alarm_active:
             return None

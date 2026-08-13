@@ -2,14 +2,15 @@
 # (c) 2026 Yoichi Tanibayashi
 #
 import click
-from loguru import logger
 
 from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
-from .mylog import loggerInit
+from .mylog import getLogger, loggerInit
 from .pomodoro import PomodoroConfig, PomodoroTimer
 from .utils import TerminalContext
+
+_log = getLogger("main")
 
 
 @click.group()
@@ -17,8 +18,8 @@ from .utils import TerminalContext
 def cli(ctx, debug):
     """Timer CLI."""
     loggerInit(debug)
-    logger.debug(ctx)
-    logger.debug(debug)
+    _log.debug(ctx)
+    _log.debug(debug)
 
 
 @click.command()
@@ -76,8 +77,8 @@ def timer(
 ):
     """Simple Timer."""
     loggerInit(debug)
-    logger.debug(f"command='{ctx.command.name}'")
-    logger.debug(
+    _log.debug(f"command='{ctx.command.name}'")
+    _log.debug(
         f"minutes={minutes},"
         f"title={title!r},title_color={title_color!r},"
         f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
@@ -127,14 +128,12 @@ cli.add_command(timer, name="t")
 def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
     """Pomodoro Timer."""
     loggerInit(debug)
-    logger.debug(f"command='{ctx.command.name}'")
-    logger.debug(
-        (
-            f"work_time={work_time}, "
-            f"break_time={break_time}, "
-            f"long_break_time={long_break_time}, "
-            f"cycles={cycles}"
-        )
+    _log.debug(f"command='{ctx.command.name}'")
+    _log.debug(
+        f"work_time={work_time}, "
+        f"break_time={break_time}, "
+        f"long_break_time={long_break_time}, "
+        f"cycles={cycles}"
     )
 
     # 秒換算

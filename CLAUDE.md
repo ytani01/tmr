@@ -88,9 +88,23 @@ uv run mypy src tests
 
 ### ログ
 
-`loguru` のグローバル logger を直接使う。各 CLI コマンドの先頭で
-`loggerInit(debug)` を 1 度だけ呼ぶ規約（`BaseTimer` を
-ライブラリとして使う側も同じ）。
+`loguru` のグローバル logger を、`mylog.getLogger()` で名前を付けて使う。
+各モジュールの先頭に `_log = getLogger("BaseTimer")` を 1 つ置き、
+そのモジュール内では `_log.debug(...)` のように呼ぶ（`base_timer.py` /
+`progress_bar.py` / `__main__.py` 参照）。継承しても呼び出し元では
+なく定義側のファイルの名前で出るので、親クラスと子クラスのログが
+混ざらない。
+
+各 CLI コマンドの先頭で `loggerInit(debug)` を 1 度だけ呼ぶ規約
+（`BaseTimer` をライブラリとして使う側も同じ）。`debug` は既定の水準
+（`DEBUG` / `INFO`）を決める。環境変数 `TMR_LOG` で名前ごとに水準を
+上書きできる。
+
+```
+TMR_LOG=BaseTimer=DEBUG,main=INFO
+```
+
+`TMR_LOG` に、どの `_log` にも使われていない名前を書くと warning が出る。
 
 ### バージョン
 

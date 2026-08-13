@@ -2,7 +2,10 @@
 # (c) 2026 Yoichi Tanibayashi
 #
 import click
-from loguru import logger
+
+from .mylog import getLogger
+
+_log = getLogger("ProgressBar")
 
 
 class ProgressBar:
@@ -22,7 +25,7 @@ class ProgressBar:
         ch_head: list[str] = DEF_CH_HEAD,
     ):
         """Constructor."""
-        logger.debug(f"total={total}")
+        _log.debug(f"total={total}")
 
         self.bar_len: int = bar_length
         self.total: float = total
