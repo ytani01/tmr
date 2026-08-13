@@ -10,7 +10,7 @@ import click
 from blessed import Terminal
 
 from . import ESQ_EL2, MIN_HOUR, SEC_MIN
-from .mylog import getLogger
+from .mylog import getLogger, setLevel
 from .progress_bar import ProgressBar
 
 
@@ -504,7 +504,10 @@ class BaseTimer:
                 str_disp += " "
 
         # 表示 ([:-1] .. 行末の " " は表示しない)
+        setLevel(self.__class__.__name__, "INFO")
         self.__log.debug(f"str_disp={str_disp!r}")
+        setLevel(self.__class__.__name__)
+
         click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):

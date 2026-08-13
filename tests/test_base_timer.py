@@ -192,7 +192,7 @@ def test_get_key_name(base_timer, mock_terminal):
     # Character key
     mock_key.name = None
     # Use setattr to avoid lint errors with static analyzers
-    setattr(mock_key, "__str__", MagicMock(return_value="p"))
+    mock_key.__str__ = MagicMock(return_value="p")
     assert base_timer.get_key_name() == "P"
 
     # Timeout (no key)
@@ -223,9 +223,7 @@ def test_edge_cases_and_robustness(base_timer, mock_terminal, mock_click):
     # Unknown key - get_key_name should handle it gracefully
     mock_key = MagicMock()
     mock_key.name = None
-    setattr(
-        mock_key, "__str__", MagicMock(return_value="\x01")
-    )  # Some control char
+    mock_key.__str__ = MagicMock(return_value="\x01")  # Some control char
     base_timer.term.inkey.return_value = mock_key
     assert base_timer.get_key_name() == "\x01"
 
