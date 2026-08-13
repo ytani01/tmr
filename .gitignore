@@ -81,3 +81,6 @@ flycheck_*
 
 # Ignore dynaconf secret files
 .secrets.*
+
+# Obsidian
+.obsidian/
