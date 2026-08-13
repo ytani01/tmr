@@ -60,8 +60,16 @@ LOG_FMT = (
 _levels: dict[str, int] = {"": 0}
 
 
-def setLevel(name: str, level: str) -> None:
-    """名前ごとの水準を設定する。"""
+def setLevel(name: str, level: str | None = None) -> None:
+    """名前ごとの水準を設定する。
+
+    ``level`` を省略する（``None``）と、既定水準に戻す
+    （``name`` のエントリを消す）。
+    """
+    if level is None:
+        if name:
+            _levels.pop(name, None)
+        return
     _levels[name] = logger.level(level).no
 
 

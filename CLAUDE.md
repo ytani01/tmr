@@ -108,7 +108,9 @@ uv run mypy src tests
 水準は、普段はクラス本体の `getLogger(name, level)` で指定する。
 テストや実行中など外から変えるときだけ `setLevel(name, level)` を使う
 （`getLogger()` の `level` 引数は内部で `setLevel()` を呼ぶだけ）。
-知らない水準名を渡すと `ValueError` になる。
+知らない水準名を渡すと `ValueError` になる。`setLevel()` で変えた水準を
+既定に戻すには `setLevel(name, None)`（`level` 省略）を使う
+（TODO-005）。
 
 各 CLI コマンドの先頭で `loggerInit(debug)` を 1 度だけ呼ぶ規約
 （`BaseTimer` をライブラリとして使う側も同じ）。`debug` は名前を

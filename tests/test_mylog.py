@@ -88,3 +88,20 @@ def test_setLevel_overrides_default():
     text = out.getvalue()
     assert "quiet info" not in text
     assert "quiet error" in text
+
+
+def test_setLevel_none_restores_default():
+    out = io.StringIO()
+
+    _log = getLogger("Quiet")
+    setLevel("Quiet", "ERROR")
+    setLevel("Quiet", None)
+    loggerInit(debug=False, out=out)
+
+    _log.info("quiet info")
+
+    assert "quiet info" in out.getvalue()
+
+
+def test_setLevel_none_on_unset_name_is_noop():
+    setLevel("NeverSet", None)
