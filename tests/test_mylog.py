@@ -4,36 +4,19 @@ import pytest
 from loguru import logger
 
 from tmr import mylog
-from tmr.mylog import getLogger, loggerInit
+from tmr.mylog import getLogger, loggerInit, setLevel
 
 
 @pytest.fixture(autouse=True)
 def _clean_logger():
-    """loguru と登録名のグローバル状態をテストごとにリセットする。"""
+    """loguru と水準のグローバル状態をテストごとにリセットする。"""
     yield
     logger.remove()
-    mylog._registered_names.clear()
-
-
-def test_parse_tmr_log():
-    assert mylog._parse_tmr_log("BaseTimer=DEBUG,main=INFO") == {
-        "BaseTimer": "DEBUG",
-        "main": "INFO",
-    }
-
-
-def test_parse_tmr_log_empty():
-    assert mylog._parse_tmr_log("") == {}
-
-
-def test_parse_tmr_log_ignores_malformed_items():
-    assert mylog._parse_tmr_log("BaseTimer=DEBUG, ,noequals") == {
-        "BaseTimer": "DEBUG"
-    }
+    mylog._levels.clear()
+    mylog._levels[""] = 0
 
 
 def test_default_level_is_info(monkeypatch):
-    monkeypatch.delenv("TMR_LOG", raising=False)
     out = io.StringIO()
     loggerInit(debug=False, out=out)
 
@@ -46,8 +29,7 @@ def test_default_level_is_info(monkeypatch):
     assert "info message" in text
 
 
-def test_debug_flag_enables_debug(monkeypatch):
-    monkeypatch.delenv("TMR_LOG", raising=False)
+def test_debug_flag_enables_debug():
     out = io.StringIO()
     loggerInit(debug=True, out=out)
 
@@ -57,8 +39,7 @@ def test_debug_flag_enables_debug(monkeypatch):
     assert "debug message" in out.getvalue()
 
 
-def test_unbound_logger_falls_back_to_module_name(monkeypatch):
-    monkeypatch.delenv("TMR_LOG", raising=False)
+def test_unbound_logger_uses_default_level():
     out = io.StringIO()
     loggerInit(debug=True, out=out)
 
@@ -67,11 +48,10 @@ def test_unbound_logger_falls_back_to_module_name(monkeypatch):
     assert "plain logger message" in out.getvalue()
 
 
-def test_tmr_log_overrides_level_per_name(monkeypatch):
-    monkeypatch.setenv("TMR_LOG", "Loud=DEBUG")
+def test_getLogger_level_overrides_default():
     out = io.StringIO()
 
-    _log_loud = getLogger("Loud")
+    _log_loud = getLogger("Loud", "DEBUG")
     _log_quiet = getLogger("Quiet")
     loggerInit(debug=False, out=out)
 
@@ -83,21 +63,28 @@ def test_tmr_log_overrides_level_per_name(monkeypatch):
     assert "quiet debug" not in text
 
 
-def test_tmr_log_unknown_name_warns(monkeypatch):
-    monkeypatch.setenv("TMR_LOG", "GhostModule=DEBUG")
+def test_getLogger_level_survives_loggerInit():
+    """getLogger() の指定は、後から呼ばれた loggerInit() でも消えない。"""
     out = io.StringIO()
 
+    _log = getLogger("Loud", "DEBUG")
     loggerInit(debug=False, out=out)
 
-    assert "GhostModule" in out.getvalue()
-    assert "WARNING" in out.getvalue()
+    _log.debug("loud debug")
+
+    assert "loud debug" in out.getvalue()
 
 
-def test_tmr_log_known_name_does_not_warn(monkeypatch):
-    monkeypatch.setenv("TMR_LOG", "Known=DEBUG")
+def test_setLevel_overrides_default():
     out = io.StringIO()
 
-    getLogger("Known")
+    _log = getLogger("Quiet")
+    setLevel("Quiet", "ERROR")
     loggerInit(debug=False, out=out)
 
-    assert "WARNING" not in out.getvalue()
+    _log.info("quiet info")
+    _log.error("quiet error")
+
+    text = out.getvalue()
+    assert "quiet info" not in text
+    assert "quiet error" in text

@@ -6,20 +6,41 @@
 # sample
 
 ```python
-from .mylog import loggerInit, exmsg
+from .mylog import exmsg, getLogger, loggerInit
+
+
+class Base:
+    # クラス本体に置く（アンダースコア2つ）。
+    __log = getLogger("Base")
+
+    def greet(self):
+        self.__log.debug("Base.greet")
+
+
+class Child(Base):
+    # 子クラスは自分の名前・水準を別に持てる。
+    __log = getLogger("Child", "DEBUG")
+
+    def greet(self):
+        self.__log.debug("Child.greet")
+        super().greet()  # ここは "Base" の名前・水準で出る
+
+
+# クラスの無いモジュール（main など）は、モジュール先頭に置く。
+_log = getLogger("main")
+
 
 def main(debug: bool = False):
-    logInit(debug=debug)
-    logger.debug(debg)
+    loggerInit(debug=debug)
+    _log.debug("start")
 
     try:
-     :
+        Child().greet()
     except Exception as e:
-      logger.error(exmsg(e))
+        _log.error(exmsg(e))
 ```
 """
 
-import os
 import sys
 from typing import TextIO
 
@@ -35,18 +56,26 @@ LOG_FMT = (
     "</level>"
 )
 
-# TMR_LOG で指定できる名前のうち、実際に getLogger() で使われたもの。
-_registered_names: set[str] = set()
+# 名前ごとの水準（数値）。"" は既定水準。
+_levels: dict[str, int] = {"": 0}
 
 
-def getLogger(name: str):
+def setLevel(name: str, level: str) -> None:
+    """名前ごとの水準を設定する。"""
+    _levels[name] = logger.level(level).no
+
+
+def getLogger(name: str, level: str | None = None):
     """名前付きの logger を返す。
 
-    モジュールの先頭に 1 つ置いて使う（``_log = getLogger("BaseTimer")``）。
-    返り値は ``logger.bind()`` した束縛オブジェクトで、
-    ``extra["log_name"]`` にこの名前が入る。
+    クラス本体に 1 つ置いて使う
+    （``__log = getLogger("BaseTimer")``）。返り値は ``logger.bind()``
+    した束縛オブジェクトで、``extra["log_name"]`` にこの名前が入る。
+    ``level`` を渡すと、そのままこの名前の水準になる
+    （``setLevel(name, level)`` を呼ぶのと同じ）。
     """
-    _registered_names.add(name)
+    if level is not None:
+        setLevel(name, level)
     return logger.bind(log_name=name)
 
 
@@ -55,34 +84,17 @@ def logLevel(debug: bool = False) -> str:
     return "DEBUG" if debug else "INFO"
 
 
-def _parse_tmr_log(env: str) -> dict[str, str]:
-    """``TMR_LOG=BaseTimer=DEBUG,main=INFO`` を辞書にする。"""
-    levels: dict[str, str] = {}
-    for item in env.split(","):
-        item = item.strip()
-        if not item or "=" not in item:
-            continue
-        name, _, level = item.partition("=")
-        levels[name.strip()] = level.strip().upper()
-    return levels
-
-
-def _make_filter(levels: dict[str, str]):
-    def _filter(record) -> bool:
-        name = record["extra"].get("log_name", record["name"])
-        level_name = levels.get(name, levels.get("", "INFO"))
-        return record["level"].no >= logger.level(level_name).no
-
-    return _filter
+def _filter(record) -> bool:
+    name = record["extra"].get("log_name", "")
+    return record["level"].no >= _levels.get(name, _levels[""])
 
 
 def loggerInit(debug: bool = False, out: TextIO = sys.stderr) -> None:
     """logger を初期化する
 
-    各 CLI コマンドの先頭で 1 度だけ呼ぶ。
-    環境変数 ``TMR_LOG``（例: ``BaseTimer=DEBUG,main=INFO``）で
-    名前ごとに水準を変えられる。ここで指定した名前が
-    ``getLogger()`` で使われていなければ warning を出す。
+    各 CLI コマンドの先頭で 1 度だけ呼ぶ。名前ごとの水準は
+    ``getLogger(name, level)`` や ``setLevel(name, level)`` で
+    コードから指定する。
 
     Parameters
     ----------
@@ -92,20 +104,8 @@ def loggerInit(debug: bool = False, out: TextIO = sys.stderr) -> None:
         出力先。既定は標準エラー
     """
     logger.remove()
-
-    levels = {"": logLevel(debug)}
-    unknown_names: list[str] = []
-    for name, level_name in _parse_tmr_log(
-        os.environ.get("TMR_LOG", "")
-    ).items():
-        if name and name not in _registered_names:
-            unknown_names.append(name)
-        levels[name] = level_name
-
-    logger.add(out, level=0, filter=_make_filter(levels), format=LOG_FMT)
-
-    for name in unknown_names:
-        logger.warning(f"TMR_LOG: 知らない名前です: '{name}'")
+    _levels[""] = logger.level(logLevel(debug)).no
+    logger.add(out, level=0, filter=_filter, format=LOG_FMT)
 
 
 def exmsg(ex: Exception) -> str:

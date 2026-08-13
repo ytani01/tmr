@@ -44,3 +44,9 @@
 
 `uv run pytest tests`、`ruff format` / `ruff check` / `basedpyright` /
 `mypy` はすべて通過を確認。
+
+### 追記（2026-08-14）
+
+`TMR_LOG` は [[TODO-003]] で廃止した。実行時に環境変数で切り替える
+用途が無く、水準はクラス本体の `getLogger(name, level)` で
+コードから指定する形に変えたため。

@@ -5,11 +5,11 @@ import click
 
 from .mylog import getLogger
 
-_log = getLogger("ProgressBar")
-
 
 class ProgressBar:
     """Progress Bar."""
+
+    __log = getLogger("ProgressBar")
 
     DEF_BAR_LEN: int = 25  # chars
 
@@ -25,7 +25,7 @@ class ProgressBar:
         ch_head: list[str] = DEF_CH_HEAD,
     ):
         """Constructor."""
-        _log.debug(f"total={total}")
+        self.__log.debug(f"total={total}")
 
         self.bar_len: int = bar_length
         self.total: float = total

@@ -89,22 +89,32 @@ uv run mypy src tests
 ### ログ
 
 `loguru` のグローバル logger を、`mylog.getLogger()` で名前を付けて使う。
-各モジュールの先頭に `_log = getLogger("BaseTimer")` を 1 つ置き、
-そのモジュール内では `_log.debug(...)` のように呼ぶ（`base_timer.py` /
-`progress_bar.py` / `__main__.py` 参照）。継承しても呼び出し元では
-なく定義側のファイルの名前で出るので、親クラスと子クラスのログが
-混ざらない。
+クラスのあるモジュールでは、クラス本体に
+`__log = getLogger("BaseTimer")`（アンダースコア 2 つ）を 1 つ置き、
+そのクラスのメソッドでは `self.__log.debug(...)` のように呼ぶ
+（`base_timer.py` / `progress_bar.py` 参照）。名前修飾で
+`self._BaseTimer__log` に解決されるので、子クラスのインスタンスから
+親のメソッドを呼んでも親の名前で出る。`_log`（1 つ）だと MRO で
+子クラスの定義が勝ち、親のログが子の水準で出てしまうので使わない。
+クラスの無いモジュール（`__main__.py` の `main`）は、モジュール先頭に
+`_log = getLogger("main")` を置く。
+
+`__init__` の中で `self.__log = ...` はしない。クラス本体に置くことで、
+`super().__init__()` を呼び忘れても親のログが `AttributeError` に
+ならず、`classmethod` からも使え、インスタンスを作る前から水準が効く。
+
+水準は、普段はクラス本体の `getLogger(name, level)` で指定する。
+テストや実行中など外から変えるときだけ `setLevel(name, level)` を使う
+（`getLogger()` の `level` 引数は内部で `setLevel()` を呼ぶだけ）。
+知らない水準名を渡すと `ValueError` になる。
 
 各 CLI コマンドの先頭で `loggerInit(debug)` を 1 度だけ呼ぶ規約
-（`BaseTimer` をライブラリとして使う側も同じ）。`debug` は既定の水準
-（`DEBUG` / `INFO`）を決める。環境変数 `TMR_LOG` で名前ごとに水準を
-上書きできる。
-
-```
-TMR_LOG=BaseTimer=DEBUG,main=INFO
-```
-
-`TMR_LOG` に、どの `_log` にも使われていない名前を書くと warning が出る。
+（`BaseTimer` をライブラリとして使う側も同じ）。`debug` は名前を
+指定していないログの既定水準（`DEBUG` / `INFO`）を決める。
+`getLogger()` / `setLevel()` で指定した名前ごとの水準は、
+呼ぶ順に関わらず `loggerInit()` で上書きされない
+（実行時に環境変数で切り替える用途が無いため、TODO-003 で
+`TMR_LOG` は廃止した）。
 
 ### バージョン
 
