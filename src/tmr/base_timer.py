@@ -45,7 +45,7 @@ class BaseTimer:
         to ensure logs are formatted correctly.
     """
 
-    __log = getLogger("BaseTimer")
+    __log = getLogger(__qualname__)
 
     IN_KEY_TIMEOUT = 0.2  # sec
 

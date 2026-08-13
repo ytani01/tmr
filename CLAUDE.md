@@ -90,9 +90,11 @@ uv run mypy src tests
 
 `loguru` のグローバル logger を、`mylog.getLogger()` で名前を付けて使う。
 クラスのあるモジュールでは、クラス本体に
-`__log = getLogger("BaseTimer")`（アンダースコア 2 つ）を 1 つ置き、
+`__log = getLogger(__qualname__)`（アンダースコア 2 つ）を 1 つ置き、
 そのクラスのメソッドでは `self.__log.debug(...)` のように呼ぶ
-（`base_timer.py` / `progress_bar.py` 参照）。名前修飾で
+（`base_timer.py` / `progress_bar.py` 参照）。`__qualname__` はクラス
+本体の実行前に暗黙で入る変数で、クラス名がそのまま入る（クラス名を
+手で書かずに済み、変えたときのずれも無くなる）。名前修飾で
 `self._BaseTimer__log` に解決されるので、子クラスのインスタンスから
 親のメソッドを呼んでも親の名前で出る。`_log`（1 つ）だと MRO で
 子クラスの定義が勝ち、親のログが子の水準で出てしまうので使わない。

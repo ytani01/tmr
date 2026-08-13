@@ -9,7 +9,7 @@ from .mylog import getLogger
 class ProgressBar:
     """Progress Bar."""
 
-    __log = getLogger("ProgressBar")
+    __log = getLogger(__qualname__)
 
     DEF_BAR_LEN: int = 25  # chars
 

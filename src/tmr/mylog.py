@@ -10,8 +10,8 @@ from .mylog import exmsg, getLogger, loggerInit
 
 
 class Base:
-    # クラス本体に置く（アンダースコア2つ）。
-    __log = getLogger("Base")
+    # クラス本体に置く（アンダースコア2つ）。__qualname__ はクラス名。
+    __log = getLogger(__qualname__)
 
     def greet(self):
         self.__log.debug("Base.greet")
@@ -19,7 +19,7 @@ class Base:
 
 class Child(Base):
     # 子クラスは自分の名前・水準を別に持てる。
-    __log = getLogger("Child", "DEBUG")
+    __log = getLogger(__qualname__, "DEBUG")
 
     def greet(self):
         self.__log.debug("Child.greet")
