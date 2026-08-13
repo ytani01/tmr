@@ -32,36 +32,81 @@
 
 ---
 
-## TODO-003. ログの水準を、コードからも名前ごとに指定できるようにする
+## TODO-003. ログの水準を、クラスごとに指定できるようにする
 
-- [ ] `setLevel()` の追加と、優先順位を決める
-- [ ] `getLogger()` に `level` 引数を足す
-- [ ] テストを足す
+- [ ] `mylog.py` を書き直す（`TMR_LOG` の廃止、`setLevel()` の追加、
+      `getLogger()` の `level` 引数）
+- [ ] 各モジュールの `_log` を、クラス本体の `__log` に移す
+- [ ] テストを直す
 - [ ] `CLAUDE.md` のログの節を直す
 
 現在、名前ごとの水準は環境変数 `TMR_LOG` からしか指定できない
-（TODO-002）。コードからも指定できるようにする。
+（TODO-002）。**実行時に環境変数で切り替える用途は無く**、コードを
+編集すれば足りる。一方、同じファイルにある複数のクラスや、親子
+（継承）を別々の水準にしたい。これが必須。
+
+### 使い方
 
 ```python
-setLevel("ClassA", "INFO")           # いつでも呼べる
-_log = getLogger("ClassB", "DEBUG")  # 内部で setLevel() を呼ぶ
+class BaseTimer:
+    __log = getLogger("BaseTimer", "DEBUG")   # クラス本体に置く
+
+    def pause(self):
+        self.__log.debug("t_start をずらす")
 ```
 
-決めること:
+- 水準を決めるのは、普段はクラス本体の `getLogger(name, level)`。
+  テストや実行中など**外から**変えるときだけ `setLevel(name, level)`。
+  `getLogger()` の `level` は `setLevel()` を呼ぶだけで、中身は同じ
+- **`__log`（アンダースコア 2 つ）にする。** 名前修飾で
+  `self._BaseTimer__log` に解決されるので、子クラスのインスタンスから
+  親のメソッドを呼んでも親の名前で出る。`_log`（1 つ）だと MRO で子の
+  定義が勝ち、親のログが子の水準で出てしまう
+- クラスの無いモジュール（`__main__.py` の `main`）は、今までどおり
+  モジュール先頭に `_log = getLogger("main")` でよい
+- **`__init__` の中で `self.__log = ...` はしない。** 親子は分かれるが、
+  `super().__init__()` を呼び忘れると親のメソッドが `AttributeError` で
+  落ちる。`classmethod` から使えない、インスタンスを 1 つも作らないと
+  水準が効かない、という問題もある
 
-- **優先順位。** `TMR_LOG` > コードからの指定 > 既定（`debug` の
-  DEBUG / INFO）を想定。環境変数を最優先にしないと、手元で `TMR_LOG` を
-  渡して一時的に上げる使い方ができない
-- **`loggerInit()` との順序。** 今は `loggerInit()` が `levels` を毎回
-  作り直すので、それより先に走った `getLogger(level=...)`（import 時に
-  走る）の指定が消える。環境変数由来とコード由来を別の辞書に分けて持ち、
-  filter が引く順で優先順位を決めれば、呼ぶ順に依らなくなる
-- **知らない水準名**（`logger.level()` が `ValueError` を投げる）を
-  `setLevel()` で弾くか、`TMR_LOG` と同じく warning にするか
+### `mylog.py` の形
 
-触るのは `src/tmr/mylog.py` と `tests/test_mylog.py`、`CLAUDE.md` のみ。
-モデル・effort: **Sonnet / medium**。変更は小さく、設計はほぼ決まって
-いるため、サブエージェントは編成しない。
+```python
+_levels: dict[str, int] = {"": 0}          # 水準は数値で持つ
+
+def setLevel(name: str, level: str) -> None:
+    _levels[name] = logger.level(level).no  # 知らない水準名はここで ValueError
+
+def getLogger(name: str, level: str | None = None):
+    if level is not None:
+        setLevel(name, level)
+    return logger.bind(log_name=name)
+
+def _filter(record) -> bool:
+    name = record["extra"].get("log_name", "")
+    return record["level"].no >= _levels.get(name, _levels[""])
+
+def loggerInit(debug: bool = False, out: TextIO = sys.stderr) -> None:
+    logger.remove()
+    _levels[""] = logger.level(logLevel(debug)).no
+    logger.add(out, level=0, filter=_filter, format=LOG_FMT)
+```
+
+消えるもの: `TMR_LOG` / `_parse_tmr_log()` / `_registered_names` /
+`_make_filter()` /「知らない名前です」の warning / 優先順位の設計。
+113 行 → 45 行程度。`getLogger()` が import 時に書いた指定は、後から
+`loggerInit()` が `_levels[""]` を入れ直しても消えないので、呼ぶ順を
+気にしなくてよい。
+
+### 決めること
+
+- `TMR_LOG` は TODO-002 で入れたもの。廃止したら
+  `archives/todo/TODO-002. ….md` に「TODO-003 で廃止した」と追記する
+
+触るのは `src/tmr/mylog.py` / `base_timer.py` / `progress_bar.py` /
+`__main__.py`、`tests/test_mylog.py`、`CLAUDE.md`。
+モデル・effort: **Sonnet / medium**。変更は小さく、設計はここで
+決まっているため、サブエージェントは編成しない。
 
 ---
 
