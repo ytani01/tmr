@@ -6,6 +6,7 @@ import click
 from . import SEC_MIN, __version__
 from .base_timer import BaseTimer
 from .click_utils import click_common_opts
+from .config import ConfigGroup
 from .mylog import getLogger, loggerInit
 from .pomodoro import PomodoroConfig, PomodoroTimer
 from .utils import TerminalContext
@@ -13,13 +14,14 @@ from .utils import TerminalContext
 _log = getLogger("main")
 
 
-@click.group()
+@click.group(cls=ConfigGroup)
 @click_common_opts(__version__)
 def cli(ctx, debug):
     """Timer CLI."""
     loggerInit(debug)
     _log.debug(ctx)
     _log.debug(debug)
+    _log.debug(f"default_map={ctx.default_map}")
 
 
 @click.command()

@@ -80,12 +80,15 @@ Usage: tmr timer [OPTIONS] MINUTES
   Simple Timer.
 
 Options:
-  -c, --alarm-count INTEGER  alarm count  [default: 999]
-  --alarm-sec1, --s1 FLOAT   alarm sec1  [default: 0.5]
-  --alarm-sec2, --s2 FLOAT   alarm sec2  [default: 1.5]
-  -V, -v, --version          Show the version and exit.
-  -d, --debug                debug flag
-  -h, --help                 Show this message and exit.
+  -t, --title TEXT                alarm title  [default: Timer]
+  -c, --title-color, --color TEXT
+                                  title color  [default: blue]
+  --alarm-count INTEGER           alarm count  [default: 999]
+  --alarm-sec1, --s1 FLOAT        alarm sec1  [default: 0.5]
+  --alarm-sec2, --s2 FLOAT        alarm sec2  [default: 1.5]
+  -V, -v, --version               Show the version and exit.
+  -d, --debug                     debug flag
+  -h, --help                      Show this message and exit.
 ```
 
 ### === subcommand: ``pomodoro`` or ``p``
@@ -106,6 +109,37 @@ Options:
   -d, --debug                  debug flag
   -h, --help                   Show this message and exit.
 ```
+
+
+## == 設定ファイル
+
+よく使う値を `~/.config/tmr/config.toml` に書いておけます
+（`XDG_CONFIG_HOME` があればそちらの下）。
+
+```toml
+debug = true          # tmr 自身のオプション
+
+[timer]
+minutes = 5
+title = "Work"
+title-color = "green"
+
+[pomodoro]
+work-time = 25.0
+break-time = 5.0
+cycles = 4
+```
+
+- セクション名はサブコマンドの名前（別名の `t` / `p` ではなく
+  `timer` / `pomodoro`）
+- キーは長い方のオプション名から `--` を取ったもの。
+  `title_color` のようにアンダースコアで書いても構いません
+- `timer` の `minutes` は引数ですが、これも書けます。
+  書いておくと `tmr timer` だけで起動できます
+- 優先順位は **コマンドライン引数 > 設定ファイル > 既定値**
+- ファイルが無ければ、何も言わずに既定値を使います。
+  **TOML が壊れている・知らないセクションやキーがある場合は、
+  エラーを出して終了します**
 
 ---
 (c) 2026 Yoichi Tanibayashi

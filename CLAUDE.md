@@ -120,6 +120,33 @@ uv run mypy src tests
 （実行時に環境変数で切り替える用途が無いため、TODO-003 で
 `TMR_LOG` は廃止した）。
 
+### 設定ファイル
+
+`config.py` が `~/.config/tmr/config.toml`（`XDG_CONFIG_HOME` があれば
+その下）を読み、`click` の `default_map` を作る。優先順位
+**コマンドライン引数 > 設定ファイル > コードの既定値** は `click` 側が
+面倒を見るので、各コマンドの定義には手を入れていない（TODO-001）。
+
+`cli` は `ConfigGroup`（`click.Group` の子）で、`make_context()` の中で
+設定を読む。**サブコマンドを直接 `invoke()` しても設定は読まれない**
+（`tests/test_timer.py` などが影響を受けないのはこのため）。設定を
+絡めたテストは `cli` から呼び、`XDG_CONFIG_HOME` を `tmp_path` に
+向けること（`tests/test_config.py` 参照）。
+
+セクション名は**サブコマンドの正式名**（別名 `t` / `p` は書けない）。
+`default_map` は別名にも同じ dict を張るので、`tmr t` でも `[timer]` が
+効く。キーはオプション名から `--` を取ったもので、`-` と `_` の
+どちらでも書ける。`timer` の `minutes` は引数だが、これも対象
+（`default_map` があれば省略できる）。
+
+ファイルが無ければ黙って既定値。**壊れていれば `ClickException` で
+終了する**（TOML の構文エラー、知らないセクション、知らないキー）。
+値の型が合わない場合は `click` が弾く。
+
+`config.py` は `loggerInit()` より前に動くので**ログを出さない**
+（`loguru` の既定ハンドラに素通しされ、毎回出てしまう）。読んだ結果は
+`cli` の中で `ctx.default_map` として出す。
+
 ### バージョン
 
 `hatch-vcs` で git タグから決まる。`__init__.py` は
