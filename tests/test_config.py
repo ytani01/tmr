@@ -4,7 +4,7 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 
-from tmr.__main__ import cli
+from tmr.cli import cli
 from tmr.config import config_path
 
 
@@ -24,8 +24,8 @@ def write_config(tmp_path, monkeypatch):
 
 @pytest.fixture
 def mock_timer():
-    """`BaseTimer` を差し替える。呼ばれた引数を見るために使う。"""
-    with mock.patch("tmr.__main__.BaseTimer") as MockTimer:
+    """`Timer` を差し替える。呼ばれた引数を見るために使う。"""
+    with mock.patch("tmr.cli.Timer") as MockTimer:
         MockTimer.return_value.main.return_value = False
         yield MockTimer
 
@@ -99,7 +99,7 @@ def test_pomodoro_config(write_config):
     """`[pomodoro]` も同じように効く。"""
     write_config("[pomodoro]\nwork-time = 1.0\ncycles = 2\n")
 
-    with mock.patch("tmr.__main__.PomodoroTimer") as MockPomodoro:
+    with mock.patch("tmr.cli.PomodoroTimer") as MockPomodoro:
         MockPomodoro.return_value.run.return_value = False
 
         result = CliRunner().invoke(cli, ["pomodoro"])

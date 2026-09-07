@@ -1,30 +1,7 @@
 # TODO
 
-**残っている項目: TODO-009, TODO-010。** これまでに 8 件を決着させた。
+**残っている項目: TODO-010。** これまでに 9 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-011` から。**
-
----
-
-## TODO-009. モジュール構成を整理する（移動と改名だけ）
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort high | implementer + verifier |
-
-- [ ] `base_timer.py` → `timer.py`、`BaseTimer` → `Timer`
-- [ ] `utils.py` → `terminal.py`（`ESQ_*` 定数もここへ移す）
-- [ ] `timefmt.py` を新設。`SEC_MIN` / `MIN_HOUR` と、`display()` 内ローカルの
-      `t_str()` をモジュール関数に出す
-- [ ] `__init__.py` は `__version__` だけにする
-- [ ] `cli.py` を新設して click のコマンド定義を移し、`__main__.py` は
-      entry point だけにする
-- [ ] テストのファイル名と import も追随させる
-- [ ] `CLAUDE.md` / `README.md` の記述を直す
-
-挙動は変えない。`t_str()` を出すことで、時刻整形の単体テストが書ける。
-
-`ProgressBar.display()` と `ESQ_EL0` / `ESQ_EL1` は本体から使われていないが、
-ライブラリとして使う側のために残す（2026-09-08 に決めた）。
 
 ---
 
@@ -55,6 +32,7 @@ TODO-009 が済んでいることが前提。
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-009.** モジュール構成を整理する（移動と改名だけ）](archives/todo/TODO-009.%20モジュール構成を整理する（移動と改名だけ）.md)
 - [**TODO-008.** `display()` 周りのバグと小細工を潰す](archives/todo/TODO-008.%20display()%20周りのバグと小細工を潰す.md)
 - [**TODO-007.** テストコードの後始末（mypy のエラーと残骸テスト）](archives/todo/TODO-007.%20テストコードの後始末（mypy%20のエラーと残骸テスト）.md)
 - [**TODO-006.** `CLAUDE.md` を `~/.claude/CLAUDE.md` の規約に合わせて整理する](archives/todo/TODO-006.%20CLAUDE.md%20を%20~-.claude-CLAUDE.md%20の規約に合わせて整理する.md)

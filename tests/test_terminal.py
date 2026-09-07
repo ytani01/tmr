@@ -1,6 +1,6 @@
 from unittest import mock
 
-from tmr.utils import ESQ_CSR_OFF, ESQ_CSR_ON, ESQ_EL2, TerminalContext
+from tmr.terminal import ESQ_CSR_OFF, ESQ_CSR_ON, ESQ_EL2, TerminalContext
 
 
 def test_terminal_context_normal():

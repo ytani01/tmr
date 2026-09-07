@@ -15,7 +15,7 @@ dependencies = [
 ]
 
 [project.scripts]
-tmr = "tmr.__main__:cli"
+tmr = "tmr.cli:cli"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]

@@ -77,7 +77,7 @@ def getLogger(name: str, level: str | None = None):
     """名前付きの logger を返す。
 
     クラス本体に 1 つ置いて使う
-    （``__log = getLogger("BaseTimer")``）。返り値は ``logger.bind()``
+    （``__log = getLogger(__qualname__)``）。返り値は ``logger.bind()``
     した束縛オブジェクトで、``extra["log_name"]`` にこの名前が入る。
     ``level`` を渡すと、そのままこの名前の水準になる
     （``setLevel(name, level)`` を呼ぶのと同じ）。

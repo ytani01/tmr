@@ -3,7 +3,7 @@
 #
 from dataclasses import dataclass
 
-from .base_timer import BaseTimer
+from .timer import Timer
 
 
 @dataclass
@@ -55,7 +55,7 @@ class PomodoroTimer:
         """単発タイマーの実行
 
         Returns:
-            bool: BaseTimer.main() の戻り値 (True=Quit)
+            bool: Timer.main() の戻り値 (True=Quit)
         """
-        timer = BaseTimer((title_text, color), seconds, enable_next=True)
+        timer = Timer((title_text, color), seconds, enable_next=True)
         return timer.main()

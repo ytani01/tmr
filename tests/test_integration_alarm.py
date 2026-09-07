@@ -4,7 +4,7 @@
 import time
 from unittest.mock import patch
 
-from tmr.base_timer import BaseTimer
+from tmr.timer import Timer
 
 
 def test_alarm_thread_lifecycle():
@@ -15,8 +15,8 @@ def test_alarm_thread_lifecycle():
     # Use small alarm parameters
     alarm_params = (10, 0.01, 0.01)  # 10 times, total ~0.2s
 
-    with patch("tmr.base_timer.click.echo") as mock_echo:
-        timer = BaseTimer(alarm_params=alarm_params)
+    with patch("tmr.timer.click.echo") as mock_echo:
+        timer = Timer(alarm_params=alarm_params)
         timer.alarm_active = True
 
         # Start alarm
@@ -42,8 +42,8 @@ def test_alarm_thread_completes():
     """
     alarm_params = (2, 0.01, 0.01)
 
-    with patch("tmr.base_timer.click.echo") as mock_echo:
-        timer = BaseTimer(alarm_params=alarm_params)
+    with patch("tmr.timer.click.echo") as mock_echo:
+        timer = Timer(alarm_params=alarm_params)
         timer.alarm_active = True
 
         thr = timer.ring_alarm()

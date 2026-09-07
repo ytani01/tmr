@@ -9,9 +9,10 @@ from dataclasses import dataclass
 import click
 from blessed import Terminal
 
-from . import ESQ_EL2, MIN_HOUR, SEC_MIN
 from .mylog import getLogger
 from .progress_bar import ProgressBar
+from .terminal import ESQ_EL2
+from .timefmt import t_str
 
 
 @dataclass
@@ -36,8 +37,8 @@ class TimerCmd:
     fn: Callable[[], None]  # []:引数なし、 None:戻り値なし
 
 
-class BaseTimer:
-    """Base Timer.
+class Timer:
+    """Timer.
 
     Note:
         This class uses `loguru` for logging. It is recommended to initialize
@@ -386,24 +387,6 @@ class BaseTimer:
         """Display."""
         # self.__log.debug("")
         t_remain = max(self.t_limit - self.t_elapsed, 0)
-
-        # 表示文字列パーツの生成
-        def t_str(sec: float, omit_sec: bool = False) -> str:
-            """Time string.
-
-            sec -> "M:SS"
-            """
-            m, s = divmod(sec, SEC_MIN)
-            if m < MIN_HOUR:
-                if omit_sec and s == 0:
-                    return f"{m:2.0f}m"
-                return f"{m:2.0f}m{s:02.0f}s"
-
-            h, m = divmod(m, MIN_HOUR)
-            if omit_sec and s == 0:
-                return f"{h:.0f}h{m:02.0f}m"
-
-            return f"{h:.0f}h{m:02.0f}m{s:02.0f}s"
 
         self.col["date"].value = f"{time.strftime('%Y-%m-%d')}"
         self.col["time"].value = f"{time.strftime('%H:%M:%S')}"

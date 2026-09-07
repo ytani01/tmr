@@ -2,7 +2,7 @@ from unittest import mock
 
 from click.testing import CliRunner
 
-from tmr.__main__ import pomodoro
+from tmr.cli import pomodoro
 from tmr.pomodoro import PomodoroConfig, PomodoroTimer
 
 
@@ -54,7 +54,7 @@ def test_pomodoro_cli_exec():
     """Verify CLI command invokes PomodoroTimer correctly"""
     runner = CliRunner()
 
-    with mock.patch("tmr.__main__.PomodoroTimer") as MockTimer:
+    with mock.patch("tmr.cli.PomodoroTimer") as MockTimer:
         instance = MockTimer.return_value
         instance.run.return_value = True  # Simulate quit
 
@@ -121,7 +121,7 @@ def test_pomodoro_timer_quit_in_short_break():
 
 
 def test_pomodoro_timer_run_timer():
-    """Verify _run_timer implementation calls BaseTimer"""
+    """Verify _run_timer implementation calls Timer"""
     config = PomodoroConfig(
         work_sec=0.1,
         break_sec=0.1,
@@ -130,7 +130,7 @@ def test_pomodoro_timer_run_timer():
     )
     timer = PomodoroTimer(config)
 
-    with mock.patch("tmr.pomodoro.BaseTimer") as MockTimer:
+    with mock.patch("tmr.pomodoro.Timer") as MockTimer:
         instance = MockTimer.return_value
         instance.main.return_value = True  # Quit
 

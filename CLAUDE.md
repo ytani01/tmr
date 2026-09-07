@@ -33,10 +33,10 @@ uv run mypy src tests
 
 ## 設計
 
-### BaseTimer が本体
+### Timer が本体
 
-`src/tmr/base_timer.py` にタイマーの仕組みがすべて入っている。
-`PomodoroTimer` は `BaseTimer` を**継承せず、順番に呼び出すだけ**の薄い層。
+`src/tmr/timer.py` にタイマーの仕組みがすべて入っている。
+`PomodoroTimer` は `Timer` を**継承せず、順番に呼び出すだけ**の薄い層。
 
 - 時刻は `time.monotonic()`。NTP でシステム時刻が動いても狂わない
 - **早送り・巻き戻し・ポーズは `t_start` をずらして表現する**
@@ -47,7 +47,7 @@ uv run mypy src tests
 
 ### 戻り値でフェーズを制御する
 
-`BaseTimer.main()` は **quit コマンドで終わったときだけ `True`** を返す。
+`Timer.main()` は **quit コマンドで終わったときだけ `True`** を返す。
 `PomodoroTimer.run()` はこれを見てサイクル全体を打ち切る。
 `next`（`enable_next=True` のときだけ有効）はタイマーを終わらせるが
 `True` を返さないので、次のフェーズへ進む。この 2 つの区別が
@@ -65,6 +65,9 @@ uv run mypy src tests
 `rate_color=True` の列は経過率に応じて `PERCENT_COLOR` の色に変わり、
 `pause_blink=True` の列はポーズ中に点滅する。
 
+秒数を `"1h01m01s"` のような文字列にする `t_str()` と、時間の単位
+（`SEC_MIN` / `MIN_HOUR`）は `timefmt.py` にある。
+
 ### キー割り当て
 
 `cmd_list()` が返す `TimerCmd` から `key_map = {key: fn}` を組み立てる。
@@ -77,9 +80,9 @@ uv run mypy src tests
 
 - アラームは daemon スレッドで `\a` を鳴らす。停止の合図は
   `alarm_active` フラグ 1 つ（スレッド側もメインループ側も見ている）
-- `TerminalContext`（`utils.py`）が**カーソルの復帰と
+- `TerminalContext`（`terminal.py`）が**カーソルの復帰と
   `KeyboardInterrupt` の握り潰し**を担当する。端末を触る処理は
-  必ずこの `with` の中に置く。CLI 側では `__main__.py` の各コマンドが
+  必ずこの `with` の中に置く。CLI 側では `cli.py` の各コマンドが
   これで包んでいる
 
 ### ログ
@@ -88,13 +91,13 @@ uv run mypy src tests
 クラスのあるモジュールでは、クラス本体に
 `__log = getLogger(__qualname__)`（アンダースコア 2 つ）を 1 つ置き、
 そのクラスのメソッドでは `self.__log.debug(...)` のように呼ぶ
-（`base_timer.py` / `progress_bar.py` 参照）。`__qualname__` はクラス
+（`timer.py` / `progress_bar.py` 参照）。`__qualname__` はクラス
 本体の実行前に暗黙で入る変数で、クラス名がそのまま入る（クラス名を
 手で書かずに済み、変えたときのずれも無くなる）。名前修飾で
-`self._BaseTimer__log` に解決されるので、子クラスのインスタンスから
+`self._Timer__log` に解決されるので、子クラスのインスタンスから
 親のメソッドを呼んでも親の名前で出る。`_log`（1 つ）だと MRO で
 子クラスの定義が勝ち、親のログが子の水準で出てしまうので使わない。
-クラスの無いモジュール（`__main__.py` の `main`）は、モジュール先頭に
+クラスの無いモジュール（`cli.py`）は、モジュール先頭に
 `_log = getLogger("main")` を置く。
 
 `__init__` の中で `self.__log = ...` はしない。クラス本体に置くことで、
@@ -109,7 +112,7 @@ uv run mypy src tests
 （TODO-005）。
 
 各 CLI コマンドの先頭で `loggerInit(debug)` を 1 度だけ呼ぶ規約
-（`BaseTimer` をライブラリとして使う側も同じ）。`debug` は名前を
+（`Timer` をライブラリとして使う側も同じ）。`debug` は名前を
 指定していないログの既定水準（`DEBUG` / `INFO`）を決める。
 `getLogger()` / `setLevel()` で指定した名前ごとの水準は、
 呼ぶ順に関わらず `loggerInit()` で上書きされない
@@ -151,10 +154,10 @@ uv run mypy src tests
 
 ## テスト
 
-`unittest.mock.patch` で `tmr.base_timer` の `Terminal` / `ProgressBar` /
-`click` / `time` を丸ごと差し替えるのが基本形（`tests/test_base_timer.py`
-の fixture 参照）。CLI は `click.testing.CliRunner` + `BaseTimer` の
-モック（`tests/test_timer.py`）。スレッドが絡む部分だけ実物を動かす
+`unittest.mock.patch` で `tmr.timer` の `Terminal` / `ProgressBar` /
+`click` / `time` を丸ごと差し替えるのが基本形（`tests/test_timer.py`
+の fixture 参照）。CLI は `click.testing.CliRunner` + `Timer` の
+モック（`tests/test_cli.py`）。スレッドが絡む部分だけ実物を動かす
 統合テストが `tests/test_integration_alarm.py` にある。
 
 `Terminal` をモックするときは `term.width` に**数値**を入れること
