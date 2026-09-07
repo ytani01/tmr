@@ -84,3 +84,6 @@ flycheck_*
 
 # Obsidian
 .obsidian/
+
+# CodeGraph
+.codegraph/
