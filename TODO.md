@@ -1,7 +1,73 @@
 # TODO
 
-**残っている項目: 無し。** これまでに 7 件を決着させた。
-新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-008` から。**
+**残っている項目: TODO-008, TODO-009, TODO-010。** これまでに 7 件を決着させた。
+新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-011` から。**
+
+---
+
+## TODO-008. `display()` 周りのバグと小細工を潰す
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Opus 5 / effort high | verifier + reviewer |
+
+- [ ] 内側の `for c in self.PERCENT_COLOR:` が外側の `for c in self.col:` を
+      潰しているのを直す（`base_timer.py:391`）
+- [ ] `display()` 内の `setLevel(self.__class__.__name__, ...)` による水準の
+      一時変更を、デバッグ行ごと削る
+- [ ] `main()` の `try: ... finally: pass` を削る
+- [ ] `fn_backward` にログを足す（`fn_forward` と揃える）
+
+挙動が変わりうるので、確認とレビューを分ける。
+
+`setLevel(self.__class__.__name__, ...)` は、`__log` の名前（`"BaseTimer"`）
+ではなく実行時のクラス名を触るので、子クラスからはそもそも効かない。
+デバッグ行 1 つを黙らせるための小細工なので、行ごと削る。
+
+---
+
+## TODO-009. モジュール構成を整理する（移動と改名だけ）
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Opus 5 / effort high | implementer + verifier |
+
+- [ ] `base_timer.py` → `timer.py`、`BaseTimer` → `Timer`
+- [ ] `utils.py` → `terminal.py`（`ESQ_*` 定数もここへ移す）
+- [ ] `timefmt.py` を新設。`SEC_MIN` / `MIN_HOUR` と、`display()` 内ローカルの
+      `t_str()` をモジュール関数に出す
+- [ ] `__init__.py` は `__version__` だけにする
+- [ ] `cli.py` を新設して click のコマンド定義を移し、`__main__.py` は
+      entry point だけにする
+- [ ] テストのファイル名と import も追随させる
+- [ ] `CLAUDE.md` / `README.md` の記述を直す
+
+挙動は変えない。`t_str()` を出すことで、時刻整形の単体テストが書ける。
+
+`ProgressBar.display()` と `ESQ_EL0` / `ESQ_EL1` は本体から使われていないが、
+ライブラリとして使う側のために残す（2026-09-08 に決めた）。
+
+---
+
+## TODO-010. `Timer` を分割し、引数をデータクラスにする
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Opus 5 / effort high | implementer + reviewer + verifier |
+
+- [ ] `TimerClock`（`clock.py`）を切り出す。経過時間・ポーズ・早送り／巻き戻し。
+      端末に依存しないので単体でテストできる
+- [ ] `TimerView`（`view.py`）を切り出す。列の定義、幅に応じた省略、スタイル付け
+- [ ] 表示順と削除の優先順位を 1 箇所にまとめる（`col_list()` の挿入順 +
+      `COL_PRIORITY` の二重管理をやめる）
+- [ ] `title: tuple[str, str]` と `alarm_params: tuple[int, float, float]` を
+      データクラスにする
+- [ ] `PomodoroTimer.run()` から、フェーズの並びを決める部分をジェネレータに
+      分離する。桁揃え `f"{tt:16s}"` は表示側へ移す
+
+`Timer` はメインループとキー操作・アラームだけの層になる。
+
+TODO-009 が済んでいることが前提。
 
 ---
 
