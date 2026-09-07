@@ -5,15 +5,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 概要
 
 `tmr` — ターミナル上で動く CLI タイマー（単純タイマー + ポモドーロ）。
-Python 3.13+ / src レイアウト / `uv` + `mise`。
-依存は `click`（CLI）、`blessed`（キー入力・端末幅）、`loguru`（ログ）。
 
 ## コマンド
 
 ```bash
 uv run pytest tests                        # テストだけ流す（最速）
-uv run pytest tests/test_base_timer.py     # ファイル単位
-uv run pytest tests/test_base_timer.py::test_fn_pause   # 1 件だけ
 uv run tmr timer 1                         # 手元で動かす（1 分）
 uv run tmr pomodoro -w 0.1 -b 0.1 -c 2     # ポモドーロを短時間で確認
 ```
@@ -39,7 +35,7 @@ uv run mypy src tests
 
 ### BaseTimer が本体
 
-`src/tmr/base_timer.py` にタイマーの仕組みがすべて入っている（534 行）。
+`src/tmr/base_timer.py` にタイマーの仕組みがすべて入っている。
 `PomodoroTimer` は `BaseTimer` を**継承せず、順番に呼び出すだけ**の薄い層。
 
 - 時刻は `time.monotonic()`。NTP でシステム時刻が動いても狂わない
