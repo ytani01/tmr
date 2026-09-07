@@ -1,7 +1,8 @@
 # TODO
 
-**残っている項目: TODO-010。** これまでに 10 件を決着させた。
-新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-012` から。**
+**残っている項目: TODO-010, TODO-012, TODO-013, TODO-014。**
+これまでに 10 件を決着させた。
+新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-015` から。**
 
 ---
 
@@ -26,6 +27,57 @@
 TODO-009 が済んでいることが前提。
 
 ---
+
+---
+
+## TODO-012. 0 分・0 サイクルを指定すると壊れる
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Opus 5 / effort medium | implementer + reviewer + verifier |
+
+- [ ] `tmr timer 0` — `TimerClock.rate` が `elapsed / t_limit` でゼロ除算に
+      なる（**コードを読んだだけで未再現**。まず再現から）
+- [ ] `tmr pomodoro -c 0` — `phases()` が何も yield しないまま
+      `while True` を回り続けて固まる
+- [ ] どちらも「そもそも受け付けない」のか「0 として動かす」のかを決める。
+      CLI で弾くなら `click` の型・コールバックで済む
+
+どちらも TODO-010 より前から同じで、分割で持ち込んだものではない
+（TODO-010 の reviewer が読んで気づいた）。
+
+## TODO-013. `t_limit` が `ProgressBar` に焼き付いている
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Opus 5 / effort medium | implementer + reviewer + verifier |
+
+- [ ] `TimerView.display()` は毎回 `clock.t_limit` を読むのに、
+      `ProgressBar` は `__init__` 時点の値を持ったままなので、両者が
+      ずれるとプログレスバーの目盛りだけが古い値で描かれる
+- [ ] `TimerView` が `t_limit` を持たず、`display()` の中で
+      `clock.t_limit` を `ProgressBar` へ渡す形にできないか見る
+      （`ProgressBar` の API を変えることになる）
+
+今は `Timer.__init__` が同じ値を両方へ渡すので実害は無い。
+`tests/test_view.py` が `clock.t_limit` を後から書き換えていて、
+**テストの中では既にずれた状態を作っている**（`ProgressBar` が
+モックなので露見していない）。
+
+## TODO-014. `pomodoro.py` のログと、点滅表示のテストを足す
+
+|      | main | 担当 |
+|------|------|------|
+| 見込み | Sonnet 5 / effort medium | implementer + verifier |
+
+- [ ] `PomodoroTimer` にクラス本体の `__log = getLogger(__qualname__)` が
+      無い（`CLAUDE.md` のログ規約から漏れている唯一のクラス）。
+      TODO-010 で足した `phases()` にも出どころが無い
+- [ ] `TimerView.display()` の点滅（`pause_blink` の列と、満了時の
+      `state`）に直接のテストが無い。`CLAUDE.md` に書いてある仕様なので
+      1 件足しておく
+
+どちらも挙動は変わらない。
 
 ## 完了済み
 
