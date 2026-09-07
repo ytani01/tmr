@@ -10,7 +10,7 @@ import click
 from blessed import Terminal
 
 from . import ESQ_EL2, MIN_HOUR, SEC_MIN
-from .mylog import getLogger, setLevel
+from .mylog import getLogger
 from .progress_bar import ProgressBar
 
 
@@ -287,17 +287,14 @@ class BaseTimer:
         if (
             thr := self.ring_alarm()
         ):  # アラーム alarm_active によっては鳴らない
-            try:
-                with self.term.cbreak():
-                    while self.alarm_active:
-                        key_name = self.get_key_name()
-                        if not key_name:
-                            self.display()
-                            continue
-                        self.__log.debug(f"in_key=[{key_name}]")
-                        break
-            finally:
-                pass
+            with self.term.cbreak():
+                while self.alarm_active:
+                    key_name = self.get_key_name()
+                    if not key_name:
+                        self.display()
+                        continue
+                    self.__log.debug(f"in_key=[{key_name}]")
+                    break
 
         self.alarm_active = False
         self.display()
@@ -380,6 +377,7 @@ class BaseTimer:
         self.t_elapsed = t_cur - self.t_start
 
     def fn_backward(self, sec: float = 1.0):
+        self.__log.debug(f"sec={sec}")
         t_cur = time.monotonic()
         self.t_start = min(self.t_start + sec, t_cur)
         self.t_elapsed = t_cur - self.t_start
@@ -426,14 +424,14 @@ class BaseTimer:
         self.col["rate"].value = f"{round(t_rate, 1):5.1f}%"
 
         ## t_rate に応じて色を変更
-        for c in self.col:
-            col = self.col[c]
-            if not col.rate_color:
-                continue
+        cur_rate_color = "white"
+        for color, percent in self.PERCENT_COLOR.items():
+            if t_rate >= percent:
+                cur_rate_color = color
 
-            for c in self.PERCENT_COLOR:
-                if t_rate >= self.PERCENT_COLOR[c]:
-                    col.color = c
+        for col in self.col.values():
+            if col.rate_color:
+                col.color = cur_rate_color
 
         # 表示項目（コピーを作成して操作）
         col_disp = self.COL_PRIORITY[:]
@@ -504,10 +502,6 @@ class BaseTimer:
                 str_disp += " "
 
         # 表示 ([:-1] .. 行末の " " は表示しない)
-        setLevel(self.__class__.__name__, "INFO")
-        self.__log.debug(f"str_disp={str_disp!r}")
-        setLevel(self.__class__.__name__)
-
         click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
 
     def thr_alarm(self, count, sec1, sec2):

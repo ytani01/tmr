@@ -1,28 +1,7 @@
 # TODO
 
-**残っている項目: TODO-008, TODO-009, TODO-010。** これまでに 7 件を決着させた。
+**残っている項目: TODO-009, TODO-010。** これまでに 8 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-011` から。**
-
----
-
-## TODO-008. `display()` 周りのバグと小細工を潰す
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort high | verifier + reviewer |
-
-- [ ] 内側の `for c in self.PERCENT_COLOR:` が外側の `for c in self.col:` を
-      潰しているのを直す（`base_timer.py:391`）
-- [ ] `display()` 内の `setLevel(self.__class__.__name__, ...)` による水準の
-      一時変更を、デバッグ行ごと削る
-- [ ] `main()` の `try: ... finally: pass` を削る
-- [ ] `fn_backward` にログを足す（`fn_forward` と揃える）
-
-挙動が変わりうるので、確認とレビューを分ける。
-
-`setLevel(self.__class__.__name__, ...)` は、`__log` の名前（`"BaseTimer"`）
-ではなく実行時のクラス名を触るので、子クラスからはそもそも効かない。
-デバッグ行 1 つを黙らせるための小細工なので、行ごと削る。
 
 ---
 
@@ -76,6 +55,7 @@ TODO-009 が済んでいることが前提。
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-008.** `display()` 周りのバグと小細工を潰す](archives/todo/TODO-008.%20display()%20周りのバグと小細工を潰す.md)
 - [**TODO-007.** テストコードの後始末（mypy のエラーと残骸テスト）](archives/todo/TODO-007.%20テストコードの後始末（mypy%20のエラーと残骸テスト）.md)
 - [**TODO-006.** `CLAUDE.md` を `~/.claude/CLAUDE.md` の規約に合わせて整理する](archives/todo/TODO-006.%20CLAUDE.md%20を%20~-.claude-CLAUDE.md%20の規約に合わせて整理する.md)
 - [**TODO-005.** `mylog.setLevel()` で変えた水準を既定に戻す API を足す](archives/todo/TODO-005.%20mylog.setLevel()%20で変えた水準を既定に戻す%20API%20を足す.md)
