@@ -1,6 +1,6 @@
 # TODO
 
-**残っている項目: TODO-010, TODO-011。** これまでに 9 件を決着させた。
+**残っている項目: TODO-010。** これまでに 10 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-012` から。**
 
 ---
@@ -27,47 +27,12 @@ TODO-009 が済んでいることが前提。
 
 ---
 
-## TODO-011. `docs/mylog.md` を消し、`mylog.py` の docstring に寄せる
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort high | verifier |
-
-- [ ] 「`getLogger` と `loggerInit` の役割の違い」の表を、`TMR_LOG` の行を
-      削ったうえで `mylog.py` の冒頭 docstring へ移す
-- [ ] `docs/mylog.md` を `git rm` する
-- [ ] `docs/` に残るのが `fig1.png` だけになるので、`CLAUDE.md` か
-      `README.md` にその旨の記述が要るか見る
-
-`docs/mylog.md` は TODO-002 のときに書いたもので、その後の TODO-003
-（`TMR_LOG` の廃止）・TODO-004（`__qualname__`）・TODO-005
-（`setLevel(name, None)`）・TODO-009（`__main__.py` → `cli.py`、
-`BaseTimer` → `Timer`）が反映されておらず、書き直しに近い量になる。
-どこからもリンクされていない（`README.md` が参照しているのは
-`docs/fig1.png` だけ）。
-
-同じ話が `docs/mylog.md`・`mylog.py` の冒頭 docstring・`CLAUDE.md` の
-「ログ」節の 3 箇所にあり、これが古くなった原因なので、
-**消して 2 箇所に減らす**（2026-09-08 に決めた）。
-
-現に古い記述:
-
-| 記述 | 現状 |
-|---|---|
-| `TMR_LOG` の節まるごと | 廃止（TODO-003） |
-| `_registered_names` に登録される | そんな変数は無い（`_levels` だけ） |
-| 未使用の名前を書くと warning が出る | 無い |
-| 名前無しはモジュール名にフォールバックする | しない（既定水準を使うだけ） |
-| モジュール先頭の `_log = getLogger("MyModule")` が基本 | クラス本体の `__log = getLogger(__qualname__)`（TODO-004） |
-| `__main__.py` の CLI コマンド例、`BaseTimer` | `cli.py`、`Timer`（TODO-009） |
-
----
-
 ## 完了済み
 
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-011.** `docs/mylog.md` を消し、`mylog.py` の docstring に寄せる](archives/todo/TODO-011.%20docs-mylog.md%20を消し、mylog.py%20の%20docstring%20に寄せる.md)
 - [**TODO-009.** モジュール構成を整理する（移動と改名だけ）](archives/todo/TODO-009.%20モジュール構成を整理する（移動と改名だけ）.md)
 - [**TODO-008.** `display()` 周りのバグと小細工を潰す](archives/todo/TODO-008.%20display()%20周りのバグと小細工を潰す.md)
 - [**TODO-007.** テストコードの後始末（mypy のエラーと残骸テスト）](archives/todo/TODO-007.%20テストコードの後始末（mypy%20のエラーと残骸テスト）.md)
