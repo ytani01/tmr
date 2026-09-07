@@ -1,7 +1,41 @@
 # TODO
 
-**残っている項目: 無し。** これまでに 6 件を決着させた。
-新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-007` から。**
+**残っている項目: TODO-007。** これまでに 6 件を決着させた。
+新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-008` から。**
+
+---
+
+## TODO-007. テストコードの後始末（mypy のエラーと残骸テスト）
+
+|        | main                     | 担当     |
+|--------|--------------------------|----------|
+| 見込み | Opus 5 / effort high     | verifier |
+
+- [ ] `tests/test_base_timer.py` の `__str__` 直接代入を直し、mypy を通す
+- [ ] `tests/test_dummy.py` を削除する
+
+`mise run lint` は mypy まで含むが、いま 2 件のエラーで止まっている。
+
+```
+tests/test_base_timer.py:195: error: Cannot assign to a method  [method-assign]
+tests/test_base_timer.py:226: error: Cannot assign to a method  [method-assign]
+```
+
+どちらも `mock_key.__str__ = MagicMock(return_value=...)` の行。しかも
+194 行目のコメントは「Use setattr to avoid lint errors with static
+analyzers」と書いてあるのに直接代入しており、**コメントと実装が
+食い違っている**。コメントどおり `setattr()` に戻せば両方そろう。
+`# type: ignore[method-assign]` で黙らせる手もあるが、コメントとの
+食い違いが残るので採らない。
+
+`tests/test_dummy.py` は `print("Hello")` するだけで何も検証していない。
+`git log` を見ると README 更新のついでに入ったきり触られていない。
+残しておくとテスト件数が実態より多く見える。
+
+完了条件は **`uv run mypy src tests` がエラー 0** で、`uv run pytest tests`
+が通ること（削除した 1 件を除いて件数が減るのは想定どおり）。
+
+挙動も分岐も変わらないので reviewer は付けず、確認は verifier に分ける。
 
 ---
 
