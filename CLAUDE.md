@@ -33,17 +33,24 @@ uv run mypy src tests
 
 ## 設計
 
-### Timer が本体
+### Timer は 3 つに分かれている
 
-`src/tmr/timer.py` にタイマーの仕組みがすべて入っている。
+- `clock.py` の `TimerClock` — 経過時間。端末に触らないので単体で試せる
+- `view.py` の `TimerView` — 列の定義、幅に応じた省略、スタイル付け
+- `timer.py` の `Timer` — メインループとキー操作・アラーム。
+  `Terminal` を作り、`TimerClock` と `TimerView` を持つ
+
 `PomodoroTimer` は `Timer` を**継承せず、順番に呼び出すだけ**の薄い層。
 
 - 時刻は `time.monotonic()`。NTP でシステム時刻が動いても狂わない
-- **早送り・巻き戻し・ポーズは `t_start` をずらして表現する**
-  （`t_elapsed` を直接いじらない）。ポーズ中は `t_start = t_cur - t_elapsed`
+- **早送り・巻き戻し・ポーズは `TimerClock.t_start` をずらして表現する**
+  （`elapsed` を直接いじらない）。ポーズ中は `t_start = t_cur - elapsed`
   を毎周回し直すことで経過時間を止める
 - メインループは `term.cbreak()` の中で `inkey(timeout=0.2)` を回す。
   0.2 秒がそのまま画面の更新間隔になる
+- タイトルは `TimerTitle(text, color, width)`、アラームの鳴らし方は
+  `AlarmParams(count, sec1, sec2)`。`width` が正なら表示時に桁を揃える
+  （ポモドーロがフェーズ名を 16 桁で並べるのに使う）
 
 ### 戻り値でフェーズを制御する
 
@@ -53,14 +60,16 @@ uv run mypy src tests
 `True` を返さないので、次のフェーズへ進む。この 2 つの区別が
 ポモドーロの唯一の制御経路。
 
-### 表示は 2 つのリストで決まる
+### 表示は col_list() 1 つで決まる
 
-- `col_list()` が返す dict の**並び順が画面上の並び順**
-- `COL_PRIORITY` が**幅が足りないときに削る順**（末尾から `pop`）
+`TimerView.col_list()` が返すリストの**並び順が画面上の並び順**で、
+各 `TimerCol` の **`priority` が幅の足りないときに削る順**
+（小さいものから削られる）。表示項目を足すときは、`col_list()` に
+1 行足し、`display()` でその列に値を入れる（`title` のように
+`__init__` で入れるものは除く）。
 
-`display()` は端末幅に収まるまで `COL_PRIORITY` の末尾から項目を落とし、
-最後に残った幅を `pbar` に割り当てる。**表示項目を足すときは両方に足す**
-（片方だけだと並び順が崩れるか、幅が足りないときに落とせない）。
+`TimerView.display()` は端末幅に収まるまで `priority` の低い項目を
+落とし、最後に残った幅を `pbar` に割り当てる。
 
 `rate_color=True` の列は経過率に応じて `PERCENT_COLOR` の色に変わり、
 `pause_blink=True` の列はポーズ中に点滅する。
@@ -154,14 +163,21 @@ uv run mypy src tests
 
 ## テスト
 
-`unittest.mock.patch` で `tmr.timer` の `Terminal` / `ProgressBar` /
-`click` / `time` を丸ごと差し替えるのが基本形（`tests/test_timer.py`
-の fixture 参照）。CLI は `click.testing.CliRunner` + `Timer` の
-モック（`tests/test_cli.py`）。スレッドが絡む部分だけ実物を動かす
-統合テストが `tests/test_integration_alarm.py` にある。
+`unittest.mock.patch` で差し替えるのが基本形。**モジュールごとに
+patch 先が違う**ので注意する。
+
+| テスト | patch する先 |
+|---|---|
+| `tests/test_timer.py` | `tmr.timer` の `Terminal` / `TimerView` / `click` / `time`（アラームの sleep）、`tmr.clock` の `time`（経過時間） |
+| `tests/test_view.py` | `tmr.view` の `ProgressBar` / `click`。`Terminal` は `MagicMock` を渡す |
+| `tests/test_clock.py` | `tmr.clock` の `time` だけ（端末に依存しない） |
+
+CLI は `click.testing.CliRunner` + `Timer` のモック
+（`tests/test_cli.py`）。スレッドが絡む部分だけ実物を動かす統合テストが
+`tests/test_integration_alarm.py` にある。
 
 `Terminal` をモックするときは `term.width` に**数値**を入れること
-（`display()` が幅と比較するため、MagicMock のままだと落ちる）。
+（`TimerView.display()` が幅と比較するため、MagicMock のままだと落ちる）。
 
 ## 補足
 

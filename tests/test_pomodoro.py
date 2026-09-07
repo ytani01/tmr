@@ -3,7 +3,8 @@ from unittest import mock
 from click.testing import CliRunner
 
 from tmr.cli import pomodoro
-from tmr.pomodoro import PomodoroConfig, PomodoroTimer
+from tmr.pomodoro import PomodoroConfig, PomodoroTimer, phases
+from tmr.view import TimerTitle
 
 
 def test_pomodoro_args():
@@ -16,6 +17,40 @@ def test_pomodoro_args():
     assert "--break-time" in result.output
     assert "--long-break-time" in result.output
     assert "--cycles" in result.output
+
+
+def test_phases_one_cycle():
+    """フェーズの並び・色・秒数（最初の 1 サイクル分）。"""
+    config = PomodoroConfig(
+        work_sec=10.0,
+        break_sec=20.0,
+        long_break_sec=30.0,
+        cycles=2,
+    )
+    gen = phases(config)
+    got = [next(gen) for _ in range(4)]
+
+    assert got[0] == (TimerTitle("WORK:1/2", "cyan", 16), 10.0)
+    assert got[1] == (TimerTitle("SHORT_BREAK:1/2", "yellow", 16), 20.0)
+    assert got[2] == (TimerTitle("WORK:2/2", "cyan", 16), 10.0)
+    assert got[3] == (TimerTitle("LONG_BREAK:2/2", "red", 16), 30.0)
+
+
+def test_phases_repeats():
+    """サイクルを繰り返す。"""
+    config = PomodoroConfig(
+        work_sec=10.0,
+        break_sec=20.0,
+        long_break_sec=30.0,
+        cycles=1,
+    )
+    gen = phases(config)
+    got = [next(gen) for _ in range(4)]
+
+    assert got[0] == (TimerTitle("WORK:1/1", "cyan", 16), 10.0)
+    assert got[1] == (TimerTitle("LONG_BREAK:1/1", "red", 16), 30.0)
+    assert got[2] == got[0]
+    assert got[3] == got[1]
 
 
 def test_pomodoro_timer_run():
@@ -41,13 +76,13 @@ def test_pomodoro_timer_run():
 
         calls = mock_run_timer.call_args_list
         # 1. Work
-        assert calls[0].args[0] == "WORK:1/2        "
+        assert calls[0].args[0].display_text == "WORK:1/2        "
         # 2. Short Break
-        assert calls[1].args[0] == "SHORT_BREAK:1/2 "
+        assert calls[1].args[0].display_text == "SHORT_BREAK:1/2 "
         # 3. Work
-        assert calls[2].args[0] == "WORK:2/2        "
+        assert calls[2].args[0].display_text == "WORK:2/2        "
         # 4. Long Break (last one in loop logic for i == cycles -1)
-        assert calls[3].args[0] == "LONG_BREAK:2/2  "
+        assert calls[3].args[0].display_text == "LONG_BREAK:2/2  "
 
 
 def test_pomodoro_cli_exec():
@@ -92,7 +127,9 @@ def test_pomodoro_timer_quit_in_work():
 
         assert Quit is True
         assert mock_run_timer.call_count == 1
-        assert mock_run_timer.call_args[0][0] == "WORK:1/2        "
+        assert mock_run_timer.call_args[0][0].display_text == (
+            "WORK:1/2        "
+        )
 
 
 def test_pomodoro_timer_quit_in_short_break():
@@ -116,8 +153,8 @@ def test_pomodoro_timer_quit_in_short_break():
         assert mock_run_timer.call_count == 2
 
         calls = mock_run_timer.call_args_list
-        assert calls[0].args[0] == "WORK:1/2        "
-        assert calls[1].args[0] == "SHORT_BREAK:1/2 "
+        assert calls[0].args[0].display_text == "WORK:1/2        "
+        assert calls[1].args[0].display_text == "SHORT_BREAK:1/2 "
 
 
 def test_pomodoro_timer_run_timer():
@@ -135,12 +172,13 @@ def test_pomodoro_timer_run_timer():
         instance.main.return_value = True  # Quit
 
         # Call _run_timer directly
-        ret = timer._run_timer("TEST", 10.0, "white")
+        title = TimerTitle("TEST", "white", 16)
+        ret = timer._run_timer(title, 10.0)
 
         assert ret is True
         MockTimer.assert_called_once()
         args = MockTimer.call_args
-        assert args[0][0] == ("TEST", "white")
+        assert args[0][0] == title
         assert args[0][1] == 10.0
         assert args[1]["enable_next"] is True
         instance.main.assert_called_once()

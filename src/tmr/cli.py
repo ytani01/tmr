@@ -10,7 +10,8 @@ from .mylog import getLogger, loggerInit
 from .pomodoro import PomodoroConfig, PomodoroTimer
 from .terminal import TerminalContext
 from .timefmt import SEC_MIN
-from .timer import Timer
+from .timer import AlarmParams, Timer
+from .view import TimerTitle
 
 _log = getLogger("main")
 
@@ -91,7 +92,9 @@ def timer(
 
     with TerminalContext():
         _ = Timer(
-            (title, title_color), limit, (alarm_count, alarm_sec1, alarm_sec2)
+            TimerTitle(title, title_color),
+            limit,
+            AlarmParams(alarm_count, alarm_sec1, alarm_sec2),
         ).main()
 
 

@@ -9,22 +9,19 @@ from dataclasses import dataclass
 import click
 from blessed import Terminal
 
+from .clock import TimerClock
 from .mylog import getLogger
-from .progress_bar import ProgressBar
 from .terminal import ESQ_EL2
-from .timefmt import t_str
+from .view import TimerTitle, TimerView
 
 
-@dataclass
-class TimerCol:
-    """Timer column."""
+@dataclass(frozen=True)
+class AlarmParams:
+    """Alarm parameters."""
 
-    value: str = ""
-    color: str = "white"
-    rate_color: bool = False
-    bold: bool = False
-    use: bool = True
-    pause_blink: bool = False
+    count: int
+    sec1: float
+    sec2: float
 
 
 @dataclass
@@ -40,6 +37,9 @@ class TimerCmd:
 class Timer:
     """Timer.
 
+    メインループとキー操作・アラームだけの層。
+    時刻は `TimerClock`、表示は `TimerView` が持つ。
+
     Note:
         This class uses `loguru` for logging. It is recommended to initialize
         the logger (e.g., using `tmr.mylog.loggerInit`) before using this class
@@ -50,47 +50,19 @@ class Timer:
 
     IN_KEY_TIMEOUT = 0.2  # sec
 
-    DEF_TITLE = ("Timer", "white")
     DEF_LIMIT = 180.0  # seconds
     COUNT_MANY = 999
     DEF_SEC1 = 0.5
     DEF_SEC2 = 1.5
 
-    STAT_STR_PAUSE = "[PAUSE]"
-    STAT_STR_TIMEUP = "[TIME UP]"
-
-    PERCENT_COLOR = {
-        "white": 0,
-        "yellow": 80,
-        "red": 95,
-    }
-
-    PBAR_LEN_MIN = 10
-
-    # 表示項目の優先順位（低いものから削除される）
-    COL_PRIORITY = [
-        "remain",
-        "title",
-        "state",
-        "pbar",
-        "limit",
-        "rate",
-        "elapsed",
-        "time",
-        "date",
-    ]
-
-    type AlarmParams = tuple[int, float, float]
+    DEF_TITLE = TimerTitle("Timer", "white")
+    DEF_ALARM = AlarmParams(COUNT_MANY, DEF_SEC1, DEF_SEC2)
 
     def __init__(
         self,
-        title: tuple[str, str] = DEF_TITLE,
+        title: TimerTitle = DEF_TITLE,
         t_limit: float = DEF_LIMIT,
-        alarm_params: AlarmParams = (
-            COUNT_MANY,
-            DEF_SEC1,
-            DEF_SEC2,
-        ),
+        alarm_params: AlarmParams = DEF_ALARM,
         enable_next: bool = False,
     ):
         """Constructor."""
@@ -98,46 +70,24 @@ class Timer:
             f"title={title},limit={t_limit},alarm_params={alarm_params}"
         )
 
-        self.col: dict = self.col_list()
-
-        self.col["title"].value = title[0]
-        self.col["title"].color = title[1]
-        self.t_limit = t_limit
         self.alarm_params = alarm_params
         self.enable_next = enable_next
 
-        self.t_start = 0.0
-        self.t_elapsed = 0.0
+        self.clock = TimerClock(t_limit)
 
         self.is_active = False
-        self.is_paused = False
         self.alarm_active = False
         self.quit_by_quitcmd = False  # quitコマンドによる終了
 
-        self.pbar = ProgressBar(self.t_limit)
-
         self.term = Terminal()
         self.__log.debug(f"term size:{self.term.width}x{self.term.height}")
+
+        self.view = TimerView(self.term, t_limit, title)
 
         self.cmd: list[TimerCmd] = self.cmd_list()
         # self.cmd を {"key": fn} の形式に展開する。
         # fn = self.key_map["key"] となる。
         self.key_map = {k: item.fn for item in self.cmd for k in item.keys}
-
-    def col_list(self) -> dict[str, TimerCol]:
-        """Column list."""
-        self.__log.debug("")
-        return {  # **重要**: **表示順**にすること。TBD:明示的にソートの必要性
-            "date": TimerCol(),
-            "time": TimerCol(),
-            "title": TimerCol(bold=True),
-            "limit": TimerCol(),
-            "state": TimerCol(rate_color=True, pause_blink=True),
-            "rate": TimerCol(rate_color=True, pause_blink=True),
-            "elapsed": TimerCol(rate_color=True, pause_blink=True),
-            "pbar": TimerCol(rate_color=True, pause_blink=True),
-            "remain": TimerCol(rate_color=True, pause_blink=True),
-        }
 
     def cmd_list(self) -> list[TimerCmd]:
         """Get command list as dataclass instances."""
@@ -214,7 +164,7 @@ class Timer:
         """Keys list to string names.
 
         [CTR_X] --> [Ctrl]+[x]
-        [LEFT] --> []
+        [LEFT] --> []
         [KEY_ENTER] --> [ENTER]
         """
         ret_str = ""
@@ -233,6 +183,14 @@ class Timer:
         ret = f"{self.keys_str(cmd.keys):<40}: {cmd.info}"
         return ret
 
+    def _display(self) -> None:
+        """現在の状態を表示する。"""
+        self.view.display(
+            self.clock,
+            is_active=self.is_active,
+            alarm_active=self.alarm_active,
+        )
+
     def main(self) -> bool:
         """Main.
 
@@ -241,20 +199,13 @@ class Timer:
         """
         self.__log.debug("start.")
 
-        self.t_start = time.monotonic()
-        self.t_elapsed = 0.0
+        self.clock.start()
 
         self.is_active = True
-        self.is_paused = False
 
         with self.term.cbreak():
             # メインループ
             while self.is_active:
-                # if self.term.width != prev_term_width:
-                #     self.__log.debug(f"term.width={self.term.width}")
-                #     prev_term_width = self.term.width
-                #     click.echo(f"{ESQ_EL2}")
-
                 # キー入力
                 key_name = self.get_key_name()
                 if key_name:
@@ -265,20 +216,14 @@ class Timer:
                     self.key_map[key_name]()
 
                 # 時間経過
-                t_cur = time.monotonic()
-
-                if self.is_paused:
-                    # ポーズ中は、self.t_elapsed を固定し、self.t_start を調整
-                    self.t_start = t_cur - self.t_elapsed
-                else:
-                    self.t_elapsed = min(t_cur - self.t_start, self.t_limit)
+                self.clock.tick()
 
                 # 表示
-                self.display()
+                self._display()
 
                 # 終了判定
-                if self.t_elapsed >= self.t_limit:
-                    if not self.is_paused:
+                if self.clock.is_timeup:
+                    if not self.clock.is_paused:
                         self.is_active = False
                         self.alarm_active = True
 
@@ -292,13 +237,13 @@ class Timer:
                 while self.alarm_active:
                     key_name = self.get_key_name()
                     if not key_name:
-                        self.display()
+                        self._display()
                         continue
                     self.__log.debug(f"in_key=[{key_name}]")
                     break
 
         self.alarm_active = False
-        self.display()
+        self._display()
         click.echo()
 
         click.echo(f"{ESQ_EL2}{self.keys_str([key_name])}\r", nl=False)
@@ -353,7 +298,7 @@ class Timer:
         """Quit."""
         self.__log.debug("")
         self.is_active = False
-        self.is_paused = False
+        self.clock.is_paused = False
         self.alarm_active = False
         self.quit_by_quitcmd = True
 
@@ -364,128 +309,20 @@ class Timer:
             return
 
         self.is_active = False
-        self.is_paused = False
+        self.clock.is_paused = False
         self.alarm_active = False
 
     def fn_pause(self):
-        self.is_paused = not self.is_paused
-        self.__log.debug(f"is_paused={self.is_paused}")
+        """Toggle pause."""
+        self.clock.toggle_pause()
 
     def fn_forward(self, sec: float = 1.0):
-        self.__log.debug(f"sec={sec}")
-        t_cur = time.monotonic()
-        self.t_start = max(self.t_start - sec, t_cur - self.t_limit)
-        self.t_elapsed = t_cur - self.t_start
+        """Forward."""
+        self.clock.forward(sec)
 
     def fn_backward(self, sec: float = 1.0):
-        self.__log.debug(f"sec={sec}")
-        t_cur = time.monotonic()
-        self.t_start = min(self.t_start + sec, t_cur)
-        self.t_elapsed = t_cur - self.t_start
-
-    def display(self):
-        """Display."""
-        # self.__log.debug("")
-        t_remain = max(self.t_limit - self.t_elapsed, 0)
-
-        self.col["date"].value = f"{time.strftime('%Y-%m-%d')}"
-        self.col["time"].value = f"{time.strftime('%H:%M:%S')}"
-        self.col["limit"].value = t_str(self.t_limit, omit_sec=True)
-        self.col["elapsed"].value = t_str(self.t_elapsed)
-        self.col["remain"].value = t_str(t_remain)
-        self.col["pbar"].value = "-" * self.PBAR_LEN_MIN  # 仮の値
-
-        ## col["state"]
-        self.col["state"].value = ""
-        if self.is_paused:
-            self.col["state"].value = self.STAT_STR_PAUSE
-        if self.t_elapsed >= self.t_limit and self.alarm_active:
-            self.col["state"].value = self.STAT_STR_TIMEUP
-
-        ## col["rate"]
-        t_rate = self.t_elapsed / self.t_limit * 100
-        self.col["rate"].value = f"{round(t_rate, 1):5.1f}%"
-
-        ## t_rate に応じて色を変更
-        cur_rate_color = "white"
-        for color, percent in self.PERCENT_COLOR.items():
-            if t_rate >= percent:
-                cur_rate_color = color
-
-        for col in self.col.values():
-            if col.rate_color:
-                col.color = cur_rate_color
-
-        # 表示項目（コピーを作成して操作）
-        col_disp = self.COL_PRIORITY[:]
-        for c in self.col:
-            self.col[c].use = True
-
-        # 行の長さを計算する関数
-        def all_len(cols: list[str]) -> int:
-            """Calculate length."""
-            # self.__log.debug(f"cols={cols}")
-            _len = 0
-            for c in cols:
-                val = self.col[c].value
-                if val:
-                    _len += len(val) + 1
-                # self.__log.debug(f"'{val}' {_len}")
-            _len -= 1 if _len > 0 else 0
-            # self.__log.debug(f"all_len={_len}")
-            return _len
-
-        # 長過ぎる場合、優先度に応じて表示する項目を省略する
-        while all_len(col_disp) > self.term.width:
-            c_name = col_disp.pop()  # 最低優先度項目抜く
-            # self.__log.debug(f"c_name={c_name},c_priority={col_disp}")
-            self.col[c_name].use = False
-
-        if not col_disp:
-            # 表示する項目がなくなった場合
-            click.secho(f"\r{ESQ_EL2}!?", blink=True, nl=False)
-            return
-
-        # プログレスバーを表示する場合の処理
-        if "pbar" in col_disp:
-            # プログレスバーの長さ
-            col_disp.remove("pbar")
-            pbar_len = self.term.width - all_len(col_disp) - 1
-            # self.__log.debug(f"pbar_len={pbar_len}")
-
-            # ポーズ中・終了時は、風車を止める
-            pbar_stop = self.is_paused or (not self.is_active)
-
-            # プログレスバー生成
-            self.col["pbar"].value = self.pbar.get_str(
-                self.t_elapsed, bar_len=pbar_len, stop=pbar_stop
-            )
-
-        # 表示する文字列を作成(スタイル付き)
-        # **注意** col_priorityを使うと順番が崩れる
-        str_disp = "\r"
-        for col_key in self.col:
-            f_blink = False
-            c = self.col[col_key]
-            if c.use:
-                if not c.value:
-                    continue
-
-                if c.pause_blink and self.is_paused:
-                    f_blink = True
-                if col_key == "state" and self.t_elapsed >= self.t_limit:
-                    f_blink = True
-
-                str_disp += click.style(
-                    c.value,
-                    fg=c.color,
-                    bold=c.bold,
-                    blink=f_blink,
-                )
-                str_disp += " "
-
-        # 表示 ([:-1] .. 行末の " " は表示しない)
-        click.echo(f"{ESQ_EL2}{str_disp[:-1]}", nl=False)
+        """Backward."""
+        self.clock.backward(sec)
 
     def thr_alarm(self, count, sec1, sec2):
         """Alarm thread function."""
@@ -510,7 +347,13 @@ class Timer:
             return None
 
         thr = threading.Thread(
-            target=self.thr_alarm, args=self.alarm_params, daemon=True
+            target=self.thr_alarm,
+            args=(
+                self.alarm_params.count,
+                self.alarm_params.sec1,
+                self.alarm_params.sec2,
+            ),
+            daemon=True,
         )
         thr.start()
         return thr

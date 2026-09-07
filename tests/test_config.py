@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from tmr.cli import cli
 from tmr.config import config_path
+from tmr.view import TimerTitle
 
 
 @pytest.fixture
@@ -48,7 +49,7 @@ def test_no_file_uses_code_default(tmp_path, monkeypatch, mock_timer):
     result = CliRunner().invoke(cli, ["timer", "1"])
 
     assert result.exit_code == 0
-    assert mock_timer.call_args[0][0] == ("Timer", "blue")
+    assert mock_timer.call_args[0][0] == TimerTitle("Timer", "blue")
 
 
 def test_config_gives_defaults(write_config, mock_timer):
@@ -60,7 +61,7 @@ def test_config_gives_defaults(write_config, mock_timer):
     result = CliRunner().invoke(cli, ["timer"])
 
     assert result.exit_code == 0
-    assert mock_timer.call_args[0][0] == ("Work", "green")
+    assert mock_timer.call_args[0][0] == TimerTitle("Work", "green")
     assert mock_timer.call_args[0][1] == 7 * 60
 
 
@@ -71,7 +72,7 @@ def test_command_line_wins(write_config, mock_timer):
     result = CliRunner().invoke(cli, ["timer", "2", "--title", "CLI"])
 
     assert result.exit_code == 0
-    assert mock_timer.call_args[0][0] == ("CLI", "blue")
+    assert mock_timer.call_args[0][0] == TimerTitle("CLI", "blue")
     assert mock_timer.call_args[0][1] == 2 * 60
 
 
@@ -92,7 +93,7 @@ def test_underscore_key(write_config, mock_timer):
     result = CliRunner().invoke(cli, ["timer"])
 
     assert result.exit_code == 0
-    assert mock_timer.call_args[0][0] == ("Timer", "red")
+    assert mock_timer.call_args[0][0] == TimerTitle("Timer", "red")
 
 
 def test_pomodoro_config(write_config):

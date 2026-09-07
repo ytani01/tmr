@@ -1,32 +1,8 @@
 # TODO
 
-**残っている項目: TODO-010, TODO-012, TODO-013, TODO-014。**
-これまでに 10 件を決着させた。
+**残っている項目: TODO-012, TODO-013, TODO-014。**
+これまでに 11 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-015` から。**
-
----
-
-## TODO-010. `Timer` を分割し、引数をデータクラスにする
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort high | implementer + reviewer + verifier |
-
-- [ ] `TimerClock`（`clock.py`）を切り出す。経過時間・ポーズ・早送り／巻き戻し。
-      端末に依存しないので単体でテストできる
-- [ ] `TimerView`（`view.py`）を切り出す。列の定義、幅に応じた省略、スタイル付け
-- [ ] 表示順と削除の優先順位を 1 箇所にまとめる（`col_list()` の挿入順 +
-      `COL_PRIORITY` の二重管理をやめる）
-- [ ] `title: tuple[str, str]` と `alarm_params: tuple[int, float, float]` を
-      データクラスにする
-- [ ] `PomodoroTimer.run()` から、フェーズの並びを決める部分をジェネレータに
-      分離する。桁揃え `f"{tt:16s}"` は表示側へ移す
-
-`Timer` はメインループとキー操作・アラームだけの層になる。
-
-TODO-009 が済んでいることが前提。
-
----
 
 ---
 
@@ -43,10 +19,10 @@ TODO-009 が済んでいることが前提。
 - [ ] どちらも「そもそも受け付けない」のか「0 として動かす」のかを決める。
       CLI で弾くなら `click` の型・コールバックで済む
 
-どちらも TODO-010 より前から同じで、分割で持ち込んだものではない
+どちらも TODO-010 より前からあり、分割で持ち込んだものではない
 （TODO-010 の reviewer が読んで気づいた）。
 
-## TODO-013. `t_limit` が `ProgressBar` に焼き付いている
+## TODO-013. `ProgressBar` が古い `t_limit` を持ち続ける
 
 |      | main | 担当 |
 |------|------|------|
@@ -54,7 +30,7 @@ TODO-009 が済んでいることが前提。
 
 - [ ] `TimerView.display()` は毎回 `clock.t_limit` を読むのに、
       `ProgressBar` は `__init__` 時点の値を持ったままなので、両者が
-      ずれるとプログレスバーの目盛りだけが古い値で描かれる
+      食い違うとプログレスバーの目盛りだけが古い値で描かれる
 - [ ] `TimerView` が `t_limit` を持たず、`display()` の中で
       `clock.t_limit` を `ProgressBar` へ渡す形にできないか見る
       （`ProgressBar` の API を変えることになる）
@@ -72,7 +48,8 @@ TODO-009 が済んでいることが前提。
 
 - [ ] `PomodoroTimer` にクラス本体の `__log = getLogger(__qualname__)` が
       無い（`CLAUDE.md` のログ規約から漏れている唯一のクラス）。
-      TODO-010 で足した `phases()` にも出どころが無い
+      TODO-010 で足した `phases()` はクラスの外にあるので、
+      モジュール先頭の `_log` が要る
 - [ ] `TimerView.display()` の点滅（`pause_blink` の列と、満了時の
       `state`）に直接のテストが無い。`CLAUDE.md` に書いてある仕様なので
       1 件足しておく
@@ -84,6 +61,7 @@ TODO-009 が済んでいることが前提。
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-010.** `Timer` を分割し、引数をデータクラスにする](archives/todo/TODO-010.%20Timer%20を分割し、引数をデータクラスにする.md)
 - [**TODO-011.** `docs/mylog.md` を消し、`mylog.py` の docstring に寄せる](archives/todo/TODO-011.%20docs-mylog.md%20を消し、mylog.py%20の%20docstring%20に寄せる.md)
 - [**TODO-009.** モジュール構成を整理する（移動と改名だけ）](archives/todo/TODO-009.%20モジュール構成を整理する（移動と改名だけ）.md)
 - [**TODO-008.** `display()` 周りのバグと小細工を潰す](archives/todo/TODO-008.%20display()%20周りのバグと小細工を潰す.md)
@@ -100,4 +78,4 @@ TODO-009 が済んでいることが前提。
 ## 補足
 
 `archives/` 直下にある `20260211-*.md` などは、この運用を始める前の
-過去の記録。**今後は参照しない**（`archives/todo/` とは別物）。
+記録。**今後は参照しない**（`archives/todo/` とは別物）。

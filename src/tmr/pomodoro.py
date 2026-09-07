@@ -1,9 +1,11 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from .timer import Timer
+from .view import TimerTitle
 
 
 @dataclass
@@ -12,6 +14,44 @@ class PomodoroConfig:
     break_sec: float
     long_break_sec: float
     cycles: int
+
+
+TITLE_WIDTH = 16
+
+
+def phases(config: PomodoroConfig) -> Iterator[tuple[TimerTitle, float]]:
+    """フェーズの並びを、無限に返す。"""
+    while True:
+        for i in range(config.cycles):
+            # Work
+            yield (
+                TimerTitle(
+                    f"WORK:{i + 1}/{config.cycles}", "cyan", TITLE_WIDTH
+                ),
+                config.work_sec,
+            )
+
+            # Break
+            if i < config.cycles - 1:
+                # Short Break
+                yield (
+                    TimerTitle(
+                        f"SHORT_BREAK:{i + 1}/{config.cycles}",
+                        "yellow",
+                        TITLE_WIDTH,
+                    ),
+                    config.break_sec,
+                )
+            else:
+                # Long Break
+                yield (
+                    TimerTitle(
+                        f"LONG_BREAK:{i + 1}/{config.cycles}",
+                        "red",
+                        TITLE_WIDTH,
+                    ),
+                    config.long_break_sec,
+                )
 
 
 class PomodoroTimer:
@@ -26,36 +66,17 @@ class PomodoroTimer:
         Returns:
             bool: ユーザが中断(quit)した場合は True、それ以外は False
         """
-        while True:
-            for i in range(self.config.cycles):
-                # Work
-                tt = f"WORK:{i + 1}/{self.config.cycles}"
-                if self._run_timer(f"{tt:16s}", self.config.work_sec, "cyan"):
-                    return True  # Quit
+        for title, sec in phases(self.config):
+            if self._run_timer(title, sec):
+                return True  # Quit
 
-                # Break
-                if i < self.config.cycles - 1:
-                    # Short Break
-                    tt = f"SHORT_BREAK:{i + 1}/{self.config.cycles}"
-                    if self._run_timer(
-                        f"{tt:16s}", self.config.break_sec, "yellow"
-                    ):
-                        return True  # Quit
-                else:
-                    # Long Break
-                    tt = f"LONG_BREAK:{i + 1}/{self.config.cycles}"
-                    if self._run_timer(
-                        f"{tt:16s}", self.config.long_break_sec, "red"
-                    ):
-                        return True  # Quit
+        return False
 
-            # forループが中断されずに完了した場合、whileループで次のサイクルへ
-
-    def _run_timer(self, title_text: str, seconds: float, color: str) -> bool:
+    def _run_timer(self, title: TimerTitle, seconds: float) -> bool:
         """単発タイマーの実行
 
         Returns:
             bool: Timer.main() の戻り値 (True=Quit)
         """
-        timer = Timer((title_text, color), seconds, enable_next=True)
+        timer = Timer(title, seconds, enable_next=True)
         return timer.main()

@@ -3,6 +3,7 @@ from unittest import mock
 from click.testing import CliRunner
 
 from tmr.cli import timer
+from tmr.view import TimerTitle
 
 
 def test_timer_help():
@@ -27,8 +28,8 @@ def test_timer_exec():
         # Verify Timer initialization
         MockTimer.assert_called_once()
         args = MockTimer.call_args
-        # args[0][0] is title ("Timer", "blue")
-        assert args[0][0] == ("Timer", "blue")
+        # args[0][0] is title
+        assert args[0][0] == TimerTitle("Timer", "blue")
         # args[0][1] is limit (1 * 60 = 60)
         assert args[0][1] == 60
 

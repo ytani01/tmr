@@ -4,7 +4,7 @@
 import time
 from unittest.mock import patch
 
-from tmr.timer import Timer
+from tmr.timer import AlarmParams, Timer
 
 
 def test_alarm_thread_lifecycle():
@@ -13,7 +13,7 @@ def test_alarm_thread_lifecycle():
     This test uses short durations to avoid long waits.
     """
     # Use small alarm parameters
-    alarm_params = (10, 0.01, 0.01)  # 10 times, total ~0.2s
+    alarm_params = AlarmParams(10, 0.01, 0.01)  # 10 times, ~0.2s
 
     with patch("tmr.timer.click.echo") as mock_echo:
         timer = Timer(alarm_params=alarm_params)
@@ -40,7 +40,7 @@ def test_alarm_thread_completes():
     """
     Verify the alarm thread completes naturally after count is reached.
     """
-    alarm_params = (2, 0.01, 0.01)
+    alarm_params = AlarmParams(2, 0.01, 0.01)
 
     with patch("tmr.timer.click.echo") as mock_echo:
         timer = Timer(alarm_params=alarm_params)
