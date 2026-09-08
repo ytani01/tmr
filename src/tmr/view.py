@@ -65,12 +65,12 @@ class TimerView:
 
     PBAR_LEN_MIN = 10
 
-    def __init__(self, term: Terminal, t_limit: float, title: TimerTitle):
+    def __init__(self, term: Terminal, title: TimerTitle):
         """Constructor."""
-        self.__log.debug(f"t_limit={t_limit},title={title}")
+        self.__log.debug(f"title={title}")
 
         self.term = term
-        self.pbar = ProgressBar(t_limit)
+        self.pbar = ProgressBar()
 
         self.col: dict[str, TimerCol] = {c.name: c for c in self.col_list()}
         self.col["title"].value = title.display_text
@@ -170,7 +170,10 @@ class TimerView:
 
             # プログレスバー生成
             self.col["pbar"].value = self.pbar.get_str(
-                clock.elapsed, bar_len=pbar_len, stop=pbar_stop
+                clock.elapsed,
+                clock.t_limit,
+                bar_len=pbar_len,
+                stop=pbar_stop,
             )
 
         # 表示する文字列を作成(スタイル付き)

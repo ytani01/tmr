@@ -1,28 +1,10 @@
 # TODO
 
-**残っている項目: TODO-013, TODO-014, TODO-015。**
-これまでに 12 件を決着させた。
+**残っている項目: TODO-014, TODO-015。**
+これまでに 13 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-016` から。**
 
 ---
-
-## TODO-013. `ProgressBar` が古い `t_limit` を持ち続ける
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort medium | implementer + reviewer + verifier |
-
-- [ ] `TimerView.display()` は毎回 `clock.t_limit` を読むのに、
-      `ProgressBar` は `__init__` 時点の値を持ったままなので、両者が
-      食い違うとプログレスバーの目盛りだけが古い値で描かれる
-- [ ] `TimerView` が `t_limit` を持たず、`display()` の中で
-      `clock.t_limit` を `ProgressBar` へ渡す形にできないか見る
-      （`ProgressBar` の API を変えることになる）
-
-今は `Timer.__init__` が同じ値を両方へ渡すので実害は無い。
-`tests/test_view.py` が `clock.t_limit` を後から書き換えていて、
-**テストの中では既にずれた状態を作っている**（`ProgressBar` が
-モックなので露見していない）。
 
 ## TODO-014. `pomodoro.py` のログと、点滅表示のテストを足す
 
@@ -91,6 +73,7 @@ help 出力は書いたとおりに試せるので、再現の確認は `verifie
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-013.** `ProgressBar` が古い `t_limit` を持ち続ける](archives/todo/TODO-013.%20ProgressBar%20が古い%20t_limit%20を持ち続ける.md)
 - [**TODO-012.** 0 分・0 サイクルを指定すると壊れる](archives/todo/TODO-012.%200%20分・0%20サイクルを指定すると壊れる.md)
 - [**TODO-010.** `Timer` を分割し、引数をデータクラスにする](archives/todo/TODO-010.%20Timer%20を分割し、引数をデータクラスにする.md)
 - [**TODO-011.** `docs/mylog.md` を消し、`mylog.py` の docstring に寄せる](archives/todo/TODO-011.%20docs-mylog.md%20を消し、mylog.py%20の%20docstring%20に寄せる.md)

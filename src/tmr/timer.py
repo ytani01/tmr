@@ -99,7 +99,7 @@ class Timer:
         self.term = Terminal()
         self.__log.debug(f"term size:{self.term.width}x{self.term.height}")
 
-        self.view = TimerView(self.term, t_limit, title)
+        self.view = TimerView(self.term, title)
 
         self.cmd: list[TimerCmd] = self.cmd_list()
         # self.cmd を {"key": fn} の形式に展開する。

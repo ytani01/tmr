@@ -35,7 +35,7 @@ def term():
 def view(term, mock_pbar, mock_click):
     """Fixture for TimerView with mocked dependencies."""
     _ = (mock_pbar, mock_click)
-    return TimerView(term, 180.0, TimerTitle("Timer", "white"))
+    return TimerView(term, TimerTitle("Timer", "white"))
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ def test_title_width():
 def test_title_width_in_col(term, mock_pbar, mock_click):
     """桁を揃えたタイトルが col に入る。"""
     _ = (mock_pbar, mock_click)
-    view = TimerView(term, 60.0, TimerTitle("WORK:1/2", "cyan", 16))
+    view = TimerView(term, TimerTitle("WORK:1/2", "cyan", 16))
     assert view.col["title"].value == "WORK:1/2        "
     assert view.col["title"].color == "cyan"
 
@@ -218,3 +218,16 @@ def test_pbar_stop(view, clock, mock_pbar):
     clock.is_paused = True
     show(view, clock, is_active=True)
     assert mock_pbar.return_value.get_str.call_args[1]["stop"] is True
+
+
+def test_pbar_uses_current_t_limit(view, clock, mock_pbar):
+    """t_limit を変えると、その値が ProgressBar へ渡る。"""
+    view.term.width = 200
+
+    clock.elapsed = 30.0
+    show(view, clock)
+    assert mock_pbar.return_value.get_str.call_args[0] == (30.0, 180.0)
+
+    clock.t_limit = 60.0
+    show(view, clock)
+    assert mock_pbar.return_value.get_str.call_args[0] == (30.0, 60.0)

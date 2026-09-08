@@ -115,7 +115,7 @@ def test_init_defaults(timer, mock_view):
     Verify default title / alarm params.
     """
     # title は View に渡され、Timer 自身は持たない
-    assert mock_view.call_args[0][2] == TimerTitle("Timer", "white")
+    assert mock_view.call_args[0][1] == TimerTitle("Timer", "white")
     assert timer.alarm_params == AlarmParams(999, 0.5, 1.5)
     assert timer.clock.t_limit == Timer.DEF_LIMIT
 

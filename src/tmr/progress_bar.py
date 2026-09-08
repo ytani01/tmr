@@ -19,16 +19,14 @@ class ProgressBar:
 
     def __init__(
         self,
-        total: float = 100.0,
         bar_length: int = DEF_BAR_LEN,
         ch: tuple[str, str] = (DEF_CH_ON, DEF_CH_OFF),
         ch_head: list[str] = DEF_CH_HEAD,
     ):
         """Constructor."""
-        self.__log.debug(f"total={total}")
+        self.__log.debug(f"bar_length={bar_length}")
 
         self.bar_len: int = bar_length
-        self.total: float = total
         self.ch_on: str = ch[0]
         self.ch_off: str = ch[1]
         self.ch_head = ch_head
@@ -38,25 +36,29 @@ class ProgressBar:
     def get_str(
         self,
         val: float,
+        total: float,
         *,
         bar_len: int | None = None,
         stop: bool = False,
     ) -> str:
-        """Display."""
+        """バーの文字列を作る。
+
+        total は呼び出しのたびに受け取る（保持しない）。
+        """
         if bar_len is None:
             bar_len = self.bar_len
 
         if bar_len <= 0:
             return ""
 
-        rate = val / self.total if self.total > 0 else 1.0
+        rate = val / total if total > 0 else 1.0
         on_len: int = max(0, min(round(rate * bar_len), bar_len))
         off_len = bar_len - on_len
 
         str_on = str_off = str_cur = ""
 
         # 風車 (0% でも動作中であることを示す)
-        if val >= self.total or stop:
+        if val >= total or stop:
             if on_len >= 1:
                 str_cur = self.ch_on
         else:
@@ -76,6 +78,7 @@ class ProgressBar:
     def display(
         self,
         val: float,
+        total: float,
         *,
         bar_len: int | None = None,
         stop: bool = False,
@@ -83,6 +86,6 @@ class ProgressBar:
         blink: bool = False,
     ):
         """Display."""
-        sbar_str = self.get_str(val, bar_len=bar_len, stop=stop)
+        sbar_str = self.get_str(val, total, bar_len=bar_len, stop=stop)
 
         click.secho(sbar_str, fg=fg, blink=blink, nl=False)

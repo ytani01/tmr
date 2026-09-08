@@ -10,13 +10,14 @@ from tmr.progress_bar import ProgressBar
 
 @pytest.fixture
 def progress_bar():
-    return ProgressBar(total=100.0)
+    return ProgressBar()
 
 
 def test_progress_bar_instance(progress_bar):
     """Verify that the fixture creates a valid ProgressBar instance."""
     assert isinstance(progress_bar, ProgressBar)
-    assert progress_bar.total == 100.0
+    assert progress_bar.bar_len == ProgressBar.DEF_BAR_LEN
+    assert not hasattr(progress_bar, "total")
 
 
 @pytest.mark.parametrize(
@@ -32,7 +33,7 @@ def test_progress_bar_instance(progress_bar):
 )
 def test_get_str_normal(progress_bar, val, expected):
     """TDD Green Phase: Verify normal progress values."""
-    assert progress_bar.get_str(val) == expected
+    assert progress_bar.get_str(val, 100.0) == expected
 
 
 @pytest.mark.parametrize(
@@ -53,8 +54,7 @@ def test_get_str_normal(progress_bar, val, expected):
 )
 def test_get_str_edge_cases(progress_bar, val, total, expected):
     """TDD Green Phase: Verify edge cases."""
-    progress_bar.total = total
-    assert progress_bar.get_str(val) == expected
+    assert progress_bar.get_str(val, total) == expected
 
 
 @pytest.mark.parametrize(
@@ -74,7 +74,7 @@ def test_get_str_dynamic_bar_len(progress_bar, bar_len, val, expected):
     elif bar_len == 50 and val == 50.0:
         expected = ">>>>>>>>>>>>>>>>>>>>>>>>|_________________________"
 
-    assert progress_bar.get_str(val, bar_len=bar_len) == expected
+    assert progress_bar.get_str(val, 100.0, bar_len=bar_len) == expected
 
 
 def test_display(progress_bar):
@@ -90,8 +90,18 @@ def test_display(progress_bar):
     expected_str = f"{'>' * 4}{expected_char}{'_' * 5}"
 
     with patch("tmr.progress_bar.click.secho") as mock_secho:
-        progress_bar.display(val, bar_len=bar_len, fg=fg, blink=blink)
+        progress_bar.display(val, 100.0, bar_len=bar_len, fg=fg, blink=blink)
 
         mock_secho.assert_called_once_with(
             expected_str, fg=fg, blink=blink, nl=False
         )
+
+
+def test_get_str_total_not_kept(progress_bar):
+    """total は保持されず、呼び出しごとの値で描かれる。"""
+    assert progress_bar.get_str(50.0, 100.0, bar_len=10, stop=True) == (
+        ">>>>>_____"
+    )
+    assert progress_bar.get_str(50.0, 50.0, bar_len=10, stop=True) == (
+        ">>>>>>>>>>"
+    )
