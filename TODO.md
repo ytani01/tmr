@@ -1,62 +1,17 @@
 # TODO
 
-**残っている項目: TODO-015。**
-これまでに 14 件を決着させた。
+**残っている項目: 無し。**
+これまでに 15 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-016` から。**
 
 ---
-
-## TODO-015. `README.md` と `docs/User.md`, `docs/Developer.md` を整備
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort high | implementer + verifier |
-
-- [ ] `README.md` — 紹介と特徴のアピールに絞る。インストール、簡単な
-      使用例、`docs/User.md` / `docs/Developer.md` への導線。
-      `docs/fig1.png` を活かす
-- [ ] `docs/User.md` — 利用者向け。`timer` / `pomodoro` のオプション、
-      キー操作、設定ファイル（`~/.config/tmr/config.toml`）、画面の見方
-      （幅が狭いときの省略）。今 `README.md` にある help 出力と
-      設定ファイルの節はこちらへ移す
-- [ ] `docs/Developer.md` — 開発者向け。`TimerClock` / `TimerView` /
-      `Timer` の 3 分割、`PomodoroTimer` が継承しない理由、`col_list()` と
-      `priority`、`mylog` の規約、テストの patch 先、開発コマンド
-- [ ] **図を作って各文書に入れる**（文章だけで説明しない）。mermaid を
-      基本とし、画面の並びのように mermaid が向かないものは枠線付きの
-      テキスト図にする
-  - `README.md`: ポモドーロのサイクル（作業 → 休憩 → …）の流れ図。
-    パッと見て何をするツールか分かるもの
-  - `docs/User.md`: 画面の各項目が何を指すかの図（`title` / 残り時間 /
-    経過率 / `pbar` などの位置と意味）。幅が狭いときに `priority` の
-    低い列が落ちていく様子の図
-  - `docs/Developer.md`: クラス構成（`Timer` が `TimerClock` /
-    `TimerView` / `Terminal` を持ち、`PomodoroTimer` が `Timer` を
-    順に呼ぶ）の図。`Timer.main()` のループと、`main()` の戻り値・
-    `next` によるフェーズ制御の状態遷移図。`col_list()` から表示が
-    決まる流れの図
-- [ ] 3 文書の重複を無くす（同じことを 2 箇所に書かない。`CLAUDE.md` とは
-      役割を分ける — `CLAUDE.md` は Claude 向けの規約、`Developer.md` は
-      人間向けの構造説明）
-- [ ] `README.md` / `docs/User.md` に載せるコマンド例と help 出力が、
-      実際の出力と一致するか確かめる。mermaid が実際に描画できるかも
-      確かめる
-
-新しいスクリーンショットは撮らず、既存の `docs/fig1.png` と、上の図で
-説明する。
-
-**分担の理由**: 文書だけの項目だが、インストール手順・コマンド例・
-help 出力は書いたとおりに試せるので、再現の確認は `verifier` に分ける
-（`~/.claude/CLAUDE.md` の TODO-017）。mermaid の構文が通るかもここで
-見る。挙動は変わらないので `reviewer` は入れない。3 ファイルにまたがる
-ので執筆は `implementer` に出し、main は構成と図の設計、
-`Developer.md` の内容設計を持つ。
 
 ## 完了済み
 
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-015.** `README.md` と `docs/User.md`, `docs/Developer.md` を整備](archives/todo/TODO-015.%20`README.md`%20と%20`docs-User.md`,%20`docs-Developer.md`%20を整備.md)
 - [**TODO-014.** `pomodoro.py` のログと、点滅表示のテストを足す](archives/todo/TODO-014.%20pomodoro.py%20のログと、点滅表示のテストを足す.md)
 - [**TODO-013.** `ProgressBar` が古い `t_limit` を持ち続ける](archives/todo/TODO-013.%20ProgressBar%20が古い%20t_limit%20を持ち続ける.md)
 - [**TODO-012.** 0 分・0 サイクルを指定すると壊れる](archives/todo/TODO-012.%200%20分・0%20サイクルを指定すると壊れる.md)

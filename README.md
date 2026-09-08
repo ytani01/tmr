@@ -1,23 +1,48 @@
 # tmr -- CLI Timer with Pomodoro timer
 
-ターミナル上で動作する、効率的でカスタマイズ可能なタイマーです。
-単純なタイマー機能と、ポモドーロ・タイマー機能があります。
+ターミナルで動く CLI タイマーです。
+単純なタイマーと、ポモドーロタイマーの 2 つがあります。
 
-![](docs/fig1.png)
+![tmr の画面](docs/fig1.png)
 
 
 ## == 特徴
-- **プログレスバーによる進捗表示**: 残り時間を視覚的に把握できます。
-- **レスポンシブ対応**: ターミナルのサイズが変化すると、リアルタイムに追従します。画面幅が狭い場合は、表示項目を省き、表示が崩れないようにします。
-- **カスタマイズ可能**: 作業時間、休憩時間、サイクル数を自由に変更できます。
-- **柔軟な機能**: タイマー動作中に時間を進めたり、戻したり、ポーズしたりできます。
+
+- **プログレスバーで進捗が見える**: 残り時間を一目で把握できます。
+- **端末の幅に追従する**: 幅が変わると表示も変わります。狭いときは
+  重要でない項目から自動的に省き、表示が崩れません。
+- **時間とサイクルを自由に決められる**: 作業時間、休憩時間、
+  サイクル数を指定できます。
+- **動作中に操作できる**: 早送り、巻き戻し、ポーズができます。
+- **設定ファイルに既定値を書ける**: よく使う値は
+  `~/.config/tmr/config.toml` に置けます。
+
+
+## == ポモドーロタイマー
+
+作業と休憩を決まった長さで繰り返す時間管理の方法です。
+`tmr pomodoro` は、次の順にフェーズを進めます。
+
+```mermaid
+flowchart LR
+    W1["WORK:1/4<br/>25 分"] --> B1["SHORT_BREAK:1/4<br/>5 分"]
+    B1 --> W2["WORK:2/4"] --> B2["SHORT_BREAK:2/4"]
+    B2 --> W3["WORK:3/4"] --> B3["SHORT_BREAK:3/4"]
+    B3 --> W4["WORK:4/4"] --> LB["LONG_BREAK:4/4<br/>15 分"]
+    LB -. "繰り返す" .-> W1
+```
+
+長い休憩までの作業回数は `-c`（既定は 4）で変えられます。
+フェーズは自動で進み、`[Q]` を押すまで繰り返します。
+`[N]` を押せば、途中でも次のフェーズへ進めます。
 
 
 ## == Requirement
 
 - mise: 開発用パッケージ管理
-- uv: Pythonプロジェクト管理
+- uv: Python プロジェクト管理
 - Python 3.13+
+
 
 ## == Install
 
@@ -32,115 +57,31 @@ uv tool install -U .
 ```
 
 
-## == Usage
+## == 使ってみる
 
-### === 共通
-
-ポモドーロタイマーでは、quitすると次のフェーズに移ります。
-ポモドーロタイマーを終了する場合は、強制終了してください。
-
-```
-COMMAND LIST
-  [P], [SPACE]                            : Pause timer.
-  [←], [Ctrl]+[B], [H], [-], [BACKSPACE]  : Backward 1 second.
-  [→], [Ctrl]+[F], [L], [+], [=]          : Forward 1 second.
-  [↑], [Ctrl]+[P], [K]                    : Backward 10 seconds.
-  [↓], [Ctrl]+[N], [J]                    : Forward 10 seconds.
-  [Ctrl]+[L]                              : Clear terminal.
-  [N], [ENTER]                            : Next.
-  [Q], [ESCAPE]                           : Quit.
-  [?]                                     : Help.
-```
-
+5 分の単純タイマー:
 
 ```bash
-Usage: tmr [OPTIONS] COMMAND [ARGS]...
-
-  Timer CLI.
-
-Options:
-  -V, -v, --version  Show the version and exit.
-  -d, --debug        debug flag
-  -h, --help         Show this message and exit.
-
-Commands:
-  p         Pomodoro Timer.
-  pomodoro  Pomodoro Timer.
-  t         Simple Timer.
-  timer     Simple Timer.
+tmr timer 5
 ```
 
-### === subcommand: ``timer`` or ``t``
+既定の設定（作業 25 分 / 休憩 5 分 / 長い休憩 15 分 / 4 サイクル）で
+ポモドーロタイマー:
 
 ```bash
-uv run tmr timer --help
-
-Usage: tmr timer [OPTIONS] MINUTES
-
-  Simple Timer.
-
-Options:
-  -t, --title TEXT                alarm title  [default: Timer]
-  -c, --title-color, --color TEXT
-                                  title color  [default: blue]
-  --alarm-count INTEGER RANGE     alarm count  [default: 999; x>=0]
-  --alarm-sec1, --s1 FLOAT RANGE  alarm sec1  [default: 0.5; 0<=x<=86400]
-  --alarm-sec2, --s2 FLOAT RANGE  alarm sec2  [default: 1.5; 0<=x<=86400]
-  -V, -v, --version               Show the version and exit.
-  -d, --debug                     debug flag
-  -h, --help                      Show this message and exit.
+tmr pomodoro
 ```
 
-### === subcommand: ``pomodoro`` or ``p``
-
-```bash
-uv run tmr pomodoro --help
-
-Usage: tmr pomodoro [OPTIONS]
-
-  Pomodoro Timer.
-
-Options:
-  -w, --work-time FLOAT RANGE     working time  [default: 25.0; x>0]
-  -b, --break-time FLOAT RANGE    break time  [default: 5.0; x>0]
-  -l, --long-break-time FLOAT RANGE
-                                  long break time  [default: 15.0; x>0]
-  -c, --cycles INTEGER RANGE      cycles  [default: 4; x>=1]
-  -V, -v, --version               Show the version and exit.
-  -d, --debug                     debug flag
-  -h, --help                      Show this message and exit.
-```
+どちらも、動作中に `[?]` を押すとキー操作の一覧が出ます。
+`[Q]` で終了します。
 
 
-## == 設定ファイル
+## == ドキュメント
 
-よく使う値を `~/.config/tmr/config.toml` に書いておけます
-（`XDG_CONFIG_HOME` があればそちらの下）。
-
-```toml
-debug = true          # tmr 自身のオプション
-
-[timer]
-minutes = 5
-title = "Work"
-title-color = "green"
-
-[pomodoro]
-work-time = 25.0
-break-time = 5.0
-cycles = 4
-```
-
-- セクション名はサブコマンドの名前（別名の `t` / `p` ではなく
-  `timer` / `pomodoro`）
-- キーは長い方のオプション名から `--` を取ったもの。
-  `title_color` のようにアンダースコアで書いても構いません
-- `timer` の `minutes` は引数ですが、これも書けます。
-  書いておくと `tmr timer` だけで起動できます
-- 優先順位は **コマンドライン引数 > 設定ファイル > 既定値**
-- ファイルが無ければ、何も言わずに既定値を使います。
-  **TOML が壊れている・知らないセクションやキーがある場合は、
-  エラーを出して終了します**
+- [使い方 (docs/User.md)](docs/User.md) —
+  オプション、キー操作、画面の見方、アラーム、設定ファイル
+- [開発者向け (docs/Developer.md)](docs/Developer.md) —
+  モジュール構成、設計の意図、テスト、開発コマンド
 
 ---
 (c) 2026 Yoichi Tanibayashi
