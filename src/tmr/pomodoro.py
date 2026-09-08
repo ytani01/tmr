@@ -5,8 +5,11 @@ import math
 from collections.abc import Iterator
 from dataclasses import dataclass
 
+from .mylog import getLogger
 from .timer import Timer
 from .view import TimerTitle
+
+_log = getLogger("pomodoro")
 
 
 @dataclass(frozen=True)
@@ -35,6 +38,8 @@ TITLE_WIDTH = 16
 
 def phases(config: PomodoroConfig) -> Iterator[tuple[TimerTitle, float]]:
     """フェーズの並びを、無限に返す。"""
+    _log.debug(f"config={config}")
+
     while True:
         for i in range(config.cycles):
             # Work
@@ -71,7 +76,11 @@ def phases(config: PomodoroConfig) -> Iterator[tuple[TimerTitle, float]]:
 class PomodoroTimer:
     """Pomodoro Timer"""
 
+    __log = getLogger(__qualname__)
+
     def __init__(self, config: PomodoroConfig):
+        self.__log.debug(f"config={config}")
+
         self.config = config
 
     def run(self) -> bool:
@@ -80,6 +89,8 @@ class PomodoroTimer:
         Returns:
             bool: ユーザが中断(quit)した場合は True、それ以外は False
         """
+        self.__log.debug("")
+
         for title, sec in phases(self.config):
             if self._run_timer(title, sec):
                 return True  # Quit
@@ -92,5 +103,7 @@ class PomodoroTimer:
         Returns:
             bool: Timer.main() の戻り値 (True=Quit)
         """
+        self.__log.debug(f"title={title}, seconds={seconds}")
+
         timer = Timer(title, seconds, enable_next=True)
         return timer.main()

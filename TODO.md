@@ -1,26 +1,10 @@
 # TODO
 
-**残っている項目: TODO-014, TODO-015。**
-これまでに 13 件を決着させた。
+**残っている項目: TODO-015。**
+これまでに 14 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-016` から。**
 
 ---
-
-## TODO-014. `pomodoro.py` のログと、点滅表示のテストを足す
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Sonnet 5 / effort medium | implementer + verifier |
-
-- [ ] `PomodoroTimer` にクラス本体の `__log = getLogger(__qualname__)` が
-      無い（`CLAUDE.md` のログ規約から漏れている唯一のクラス）。
-      TODO-010 で足した `phases()` はクラスの外にあるので、
-      モジュール先頭の `_log` が要る
-- [ ] `TimerView.display()` の点滅（`pause_blink` の列と、満了時の
-      `state`）に直接のテストが無い。`CLAUDE.md` に書いてある仕様なので
-      1 件足しておく
-
-どちらも挙動は変わらない。
 
 ## TODO-015. `README.md` と `docs/User.md`, `docs/Developer.md` を整備
 
@@ -73,6 +57,7 @@ help 出力は書いたとおりに試せるので、再現の確認は `verifie
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-014.** `pomodoro.py` のログと、点滅表示のテストを足す](archives/todo/TODO-014.%20pomodoro.py%20のログと、点滅表示のテストを足す.md)
 - [**TODO-013.** `ProgressBar` が古い `t_limit` を持ち続ける](archives/todo/TODO-013.%20ProgressBar%20が古い%20t_limit%20を持ち続ける.md)
 - [**TODO-012.** 0 分・0 サイクルを指定すると壊れる](archives/todo/TODO-012.%200%20分・0%20サイクルを指定すると壊れる.md)
 - [**TODO-010.** `Timer` を分割し、引数をデータクラスにする](archives/todo/TODO-010.%20Timer%20を分割し、引数をデータクラスにする.md)

@@ -48,6 +48,17 @@ def show(view, clock, *, is_active=True, alarm_active=False):
     view.display(clock, is_active=is_active, alarm_active=alarm_active)
 
 
+def blink_map(mock_click):
+    """click.style に渡った {表示文字列: blink} を返す。
+
+    別の列が同じ文字列になると取り違えるので、重ならないことも確かめる。
+    """
+    calls = mock_click.style.call_args_list
+    result = {c.args[0]: c.kwargs["blink"] for c in calls}
+    assert len(result) == len(calls)
+    return result
+
+
 def test_init(view, mock_pbar):
     """ProgressBar は TimerView が作る。"""
     assert view.pbar == mock_pbar.return_value
@@ -182,6 +193,39 @@ def test_display_timeup_state(view, clock):
 
     show(view, clock, is_active=False, alarm_active=True)
     assert view.col["state"].value == "[TIME UP]"
+
+
+def test_display_pause_blink(view, clock, mock_click):
+    """ポーズ中は pause_blink の列が点滅する。"""
+    clock.t_limit = 60.0
+    clock.elapsed = 10.0
+    view.term.width = 200
+
+    clock.is_paused = False
+    show(view, clock)
+    calls = blink_map(mock_click)
+    assert calls[view.col["rate"].value] is False
+
+    mock_click.style.reset_mock()
+    clock.is_paused = True
+    show(view, clock)
+    calls = blink_map(mock_click)
+    assert calls[view.col["rate"].value] is True
+
+
+def test_display_timeup_blink(view, clock, mock_click):
+    """満了時は state 列が点滅する。"""
+    clock.t_limit = 60.0
+    clock.elapsed = 60.0
+    view.term.width = 200
+
+    show(view, clock, is_active=False, alarm_active=False)
+    assert view.col["state"].value == ""
+
+    mock_click.style.reset_mock()
+    show(view, clock, is_active=False, alarm_active=True)
+    calls = blink_map(mock_click)
+    assert calls[view.col["state"].value] is True
 
 
 def test_display_hours(view, clock):
