@@ -1,6 +1,9 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+import signal
+import threading
+import time
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -53,6 +56,25 @@ def test_alarm_params_sec_max_allowed(field):
     assert getattr(params, field) == MAX_ALARM_SEC
 
 
+@pytest.mark.parametrize("cmd", ["", " ", "\t"])
+def test_alarm_params_empty_cmd_raises(cmd):
+    """cmd が空文字・空白のみなら ValueError。"""
+    with pytest.raises(ValueError):
+        AlarmParams(1, 0.5, 1.5, cmd)
+
+
+def test_alarm_params_cmd_none_allowed():
+    """cmd=None（既定）は従来どおりビープ。"""
+    params = AlarmParams(1, 0.5, 1.5)
+    assert params.cmd is None
+
+
+def test_alarm_params_cmd_allowed():
+    """cmd に文字列を指定できる。"""
+    params = AlarmParams(1, 0.5, 1.5, "echo hello")
+    assert params.cmd == "echo hello"
+
+
 @pytest.fixture
 def mock_terminal():
     with patch("tmr.timer.Terminal") as mock:
@@ -75,6 +97,25 @@ def mock_click():
 def mock_time():
     """tmr.timer の time (アラームの sleep)。"""
     with patch("tmr.timer.time") as mock:
+        yield mock
+
+
+@pytest.fixture
+def mock_subprocess():
+    """tmr.timer の subprocess (アラームのコマンド実行)。"""
+    with patch("tmr.timer.subprocess") as mock:
+        proc = mock.Popen.return_value
+        proc.communicate.return_value = ("", "")
+        proc.returncode = 0
+        proc.poll.return_value = 0  # 既に終わっている
+        proc.pid = -1  # 実在しない（撃ってしまっても当たらない値）
+        yield mock
+
+
+@pytest.fixture
+def mock_killpg():
+    """tmr.timer の os.killpg (アラームのコマンドを止める)。"""
+    with patch("tmr.timer.os.killpg") as mock:
         yield mock
 
 
@@ -301,11 +342,13 @@ def test_ring_alarm_and_thread(timer, mock_click):
     with patch("threading.Thread") as mock_thread:
         timer.ring_alarm()
         mock_thread.assert_called_once()
-        assert mock_thread.call_args[1]["args"] == (1, 0.01, 0.01)
+        assert mock_thread.call_args[1]["args"] == (
+            AlarmParams(1, 0.01, 0.01),
+        )
 
     # Test the thread function itself
     timer.alarm_active = True
-    timer.thr_alarm(1, 0.001, 0.001)
+    timer.thr_alarm(AlarmParams(1, 0.001, 0.001))
     assert mock_click.echo.called  # Should call '\a'
     assert timer.alarm_active is False
 
@@ -316,6 +359,470 @@ def test_ring_alarm_inactive(timer):
     """
     timer.alarm_active = False
     assert timer.ring_alarm() is None
+
+
+def test_thr_alarm_cmd(timer, mock_click, mock_subprocess):
+    """cmd 指定時は、コマンドを 1 回だけ実行し、ビープを出さない。"""
+    timer.alarm_active = True
+    timer.thr_alarm(AlarmParams(3, 0.001, 0.001, "echo hello"))
+
+    # 端末を取り合わないよう、stdin は捨て、出力は取り込む
+    mock_subprocess.Popen.assert_called_once_with(
+        "echo hello",
+        shell=True,
+        stdin=mock_subprocess.DEVNULL,
+        stdout=mock_subprocess.PIPE,
+        stderr=mock_subprocess.PIPE,
+        text=True,
+        errors="replace",
+        start_new_session=True,
+    )
+    mock_subprocess.Popen.return_value.communicate.assert_called_once()
+    assert not mock_click.echo.called
+    # キー入力を待つため、alarm_active は False にしない
+    assert timer.alarm_active is True
+
+
+def test_thr_alarm_cmd_nonzero(timer, mock_click, mock_subprocess):
+    """コマンドが非ゼロ終了しても、ビープにフォールバックしない。"""
+    mock_subprocess.Popen.return_value.returncode = 1
+
+    timer.alarm_active = True
+    timer.thr_alarm(AlarmParams(3, 0.001, 0.001, "false"))
+
+    mock_subprocess.Popen.assert_called_once()
+    assert not mock_click.echo.called
+    assert timer.alarm_active is True
+
+
+def test_thr_alarm_cmd_oserror(timer, mock_click, mock_subprocess):
+    """コマンドの実行に失敗しても例外を投げない。"""
+    mock_subprocess.Popen.side_effect = OSError("no such command")
+
+    timer.alarm_active = True
+    timer.thr_alarm(AlarmParams(3, 0.001, 0.001, "no_such_command"))
+
+    mock_subprocess.Popen.assert_called_once()
+    assert not mock_click.echo.called
+    assert timer.alarm_active is True
+    assert timer.alarm_proc is None
+
+
+def test_thr_alarm_cmd_output_to_log(timer, mock_click, mock_subprocess):
+    """コマンドの出力は画面に出さず、ログに回す（長さは切り詰める）。"""
+    proc = mock_subprocess.Popen.return_value
+    proc.communicate.return_value = ("hello\n", "x" * (Timer.LOG_MAX_LEN * 2))
+
+    with patch.object(Timer, "_Timer__log") as mock_log:
+        timer.thr_alarm(AlarmParams(1, 0.001, 0.001, "echo hello"))
+
+    logged = [
+        call.args[0]
+        for call in mock_log.debug.call_args_list
+        if call.args and isinstance(call.args[0], str)
+    ]
+    assert "stdout: hello" in logged
+    assert f"stderr: {'x' * Timer.LOG_MAX_LEN}" in logged
+    assert not mock_click.echo.called
+
+
+def test_thr_alarm_cmd_empty_output_not_logged(
+    timer, mock_click, mock_subprocess
+):
+    """出力が無ければ、そのログは出さない。"""
+    mock_subprocess.Popen.return_value.communicate.return_value = ("", " \n")
+
+    with patch.object(Timer, "_Timer__log") as mock_log:
+        timer.thr_alarm(AlarmParams(1, 0.001, 0.001, "true"))
+
+    logged = [
+        call.args[0]
+        for call in mock_log.debug.call_args_list
+        if call.args and isinstance(call.args[0], str)
+    ]
+    assert not [
+        msg for msg in logged if msg.startswith(("stdout:", "stderr:"))
+    ]
+
+
+def test_main_with_alarm_cmd_failure(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """コマンドが失敗しても、キー入力でアラームを抜けて終了する。"""
+    mock_subprocess.Popen.side_effect = OSError("no such command")
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "no_such_command")
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    with patch.object(Timer, "get_key_name", side_effect=["", "KEY_ENTER"]):
+        timer.clock.t_limit = 0.1
+        assert timer.main() is False
+
+    assert timer.alarm_active is False
+    mock_subprocess.Popen.assert_called_once()
+    # 起動に失敗したのだから、シグナルを送る相手も居ない
+    mock_killpg.assert_not_called()
+
+
+def test_main_quit_with_alarm_cmd(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """cmd 経路でも [Q] なら main() は True を返す。
+
+    ポモドーロのフェーズ制御は、この戻り値だけで決まる。
+    """
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "echo hello")
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    with patch.object(Timer, "get_key_name", side_effect=["", "Q"]):
+        timer.clock.t_limit = 0.1
+        assert timer.main() is True
+
+    assert timer.alarm_active is False
+    assert timer.quit_by_quitcmd is True
+    mock_subprocess.Popen.assert_called_once()
+    # 自然に終わったコマンドにシグナルは送らない
+    mock_killpg.assert_not_called()
+
+
+def _running_proc(mock_subprocess, stop_event):
+    """終わらないコマンドの proc モックを作る。
+
+    stop_event がセットされるまで communicate() が返らない。
+    """
+    proc = mock_subprocess.Popen.return_value
+    proc.poll.return_value = None  # 実行中
+
+    def fake_communicate():
+        assert stop_event.wait(timeout=5.0)
+        return ("", "")
+
+    proc.communicate.side_effect = fake_communicate
+    return proc
+
+
+def test_stop_alarm_cmd_sigterm(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """実行中のコマンドは SIGTERM で止める。"""
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = lambda pid, sig: stop_event.set()
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    assert timer.stop_alarm_cmd(thr) is True
+    # シェルの子（sleep）ごと落とすため、プロセスグループに送る
+    mock_killpg.assert_called_once_with(proc.pid, signal.SIGTERM)
+    assert not thr.is_alive()
+    assert timer.alarm_cmd_stopped is True
+
+
+def test_stop_alarm_cmd_sigkill(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """SIGTERM で止まらなければ SIGKILL を送る。"""
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+
+    def fake_killpg(pid, sig):
+        if sig == signal.SIGKILL:
+            stop_event.set()
+
+    mock_killpg.side_effect = fake_killpg
+
+    timer.ALARM_STOP_SEC = 0.05  # 待ち時間を詰める
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    assert timer.stop_alarm_cmd(thr) is True
+    assert mock_killpg.call_args_list == [
+        ((proc.pid, signal.SIGTERM),),
+        ((proc.pid, signal.SIGKILL),),
+    ]
+    assert not thr.is_alive()
+
+
+def test_stop_alarm_cmd_not_stopped(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """SIGKILL でも止まらなければ False を返す（join で固まらない）。"""
+    stop_event = threading.Event()
+    _running_proc(mock_subprocess, stop_event)
+
+    timer.ALARM_STOP_SEC = 0.05
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    assert timer.stop_alarm_cmd(thr) is False
+    assert mock_killpg.call_count == 2
+
+    stop_event.set()  # 後始末
+    thr.join(timeout=5.0)
+
+
+def test_stop_alarm_cmd_already_gone(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """既に居ないプロセスへのシグナルは、失敗にしない。"""
+    stop_event = threading.Event()
+    _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = ProcessLookupError()
+
+    timer.ALARM_STOP_SEC = 0.05
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    assert timer.stop_alarm_cmd(thr) is False  # スレッドは終わっていない
+    assert mock_killpg.call_count == 2
+
+    stop_event.set()
+    thr.join(timeout=5.0)
+
+
+def test_stop_alarm_cmd_oserror(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """シグナルを送れなければ False（join せずに進む）。"""
+    stop_event = threading.Event()
+    _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = PermissionError()
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    assert timer.stop_alarm_cmd(thr) is False
+    mock_killpg.assert_called_once()
+
+    stop_event.set()
+    thr.join(timeout=5.0)
+
+
+def test_stop_alarm_cmd_waits_for_popen(
+    timer, mock_click, mock_subprocess, mock_killpg
+):
+    """スレッドが起動し終える前に押されても、止めそこねない。
+
+    Popen を作る前にキーを押されると alarm_proc がまだ None で、
+    「止める相手が居ない」と判断して join() で固まってしまう。
+    """
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = lambda pid, sig: stop_event.set()
+
+    def slow_popen(*_args, **_kwargs):
+        time.sleep(0.2)  # 起動に時間がかかる状況
+        return proc
+
+    mock_subprocess.Popen.side_effect = slow_popen
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    timer.alarm_active = True
+    thr = timer.ring_alarm()
+    assert thr is not None
+
+    # Popen ができる前に止めにいく
+    assert timer.alarm_proc is None
+    assert timer.stop_alarm_cmd(thr) is True
+
+    mock_killpg.assert_called_once_with(proc.pid, signal.SIGTERM)
+    assert not thr.is_alive()
+
+
+def test_main_resets_alarm_cmd_state(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """同じ Timer で 2 回目を回しても、コマンドを止められる。
+
+    ライブラリとして直接使う経路のため（CLI は毎回作り直す）。
+    """
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+
+    # 1 回目: コマンドは自然に終わったことにする
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+    with patch.object(Timer, "get_key_name", side_effect=["", "KEY_ENTER"]):
+        timer.clock.t_limit = 0.1
+        assert timer.main() is False
+
+    assert timer.alarm_proc is not None
+    assert timer.alarm_proc_ready.is_set()
+
+    # 2 回目: 終わらないコマンドでも、キーを押せば止まる
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = lambda pid, sig: stop_event.set()
+
+    mock_clock_time.monotonic.side_effect = [200.0, 210.0, 220.0]
+    with patch.object(Timer, "get_key_name", side_effect=["", "Q"]):
+        timer.clock.t_limit = 0.1
+        assert timer.main() is True
+
+    mock_killpg.assert_called_once_with(proc.pid, signal.SIGTERM)
+    assert stop_event.is_set()
+
+
+def test_main_keyboard_interrupt_stops_alarm_cmd(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """Ctrl-C で抜けるときも、コマンドを止めてから送出し直す。
+
+    子は別セッションにいるので、端末の SIGINT は届かない。
+    """
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = lambda pid, sig: stop_event.set()
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    with patch.object(
+        Timer, "get_key_name", side_effect=["", KeyboardInterrupt()]
+    ):
+        timer.clock.t_limit = 0.1
+        with pytest.raises(KeyboardInterrupt):
+            timer.main()
+
+    mock_killpg.assert_called_once_with(proc.pid, signal.SIGTERM)
+    assert stop_event.is_set()
+
+
+def test_ring_alarm_blocks_sigint_for_thread(timer, mock_click):
+    """アラームのスレッドは SIGINT を受け取らない状態で起動する。
+
+    受け取られると、後始末の最中でもメインスレッドへ
+    KeyboardInterrupt が飛び、SIGKILL の前に抜けてしまう。
+    スレッドは生成時のマスクを継ぐので、**start() がマスクの内側で
+    起きること**まで固定する。
+
+    戻すときは解除ではなく、元のマスクへ戻す（呼ぶ側が SIGINT を
+    止めていることがあるため）。
+    """
+    timer.alarm_params = AlarmParams(0, 0.0, 0.0)  # すぐ終わる
+    timer.alarm_active = True
+
+    manager = MagicMock()  # 呼び出し順をまとめて見る
+    with (
+        patch("tmr.timer.signal.pthread_sigmask") as mock_mask,
+        patch("tmr.timer.threading.Thread") as mock_thread,
+    ):
+        mock_mask.return_value = {signal.SIGUSR1}  # 元のマスク
+        manager.attach_mock(mock_mask, "mask")
+        manager.attach_mock(mock_thread, "Thread")
+
+        thr = timer.ring_alarm()
+
+    assert thr is mock_thread.return_value
+    assert [c[0] for c in manager.mock_calls] == [
+        "Thread",
+        "mask",
+        "Thread().start",
+        "mask",
+    ]
+    assert mock_mask.call_args_list == [
+        ((signal.SIG_BLOCK, {signal.SIGINT}),),
+        ((signal.SIG_SETMASK, {signal.SIGUSR1}),),
+    ]
+
+
+def test_cleanup_by_interrupt_restores_sigmask(timer, mock_click):
+    """後始末はマスクの内側で行い、解除ではなく元のマスクへ戻す。
+
+    呼ぶ側が SIGINT を止めていることがあるため
+    （Timer をライブラリとして直接使う経路）。
+    """
+    timer.alarm_thr = MagicMock()
+
+    manager = MagicMock()  # 呼び出し順をまとめて見る
+    with (
+        patch("tmr.timer.signal.pthread_sigmask") as mock_mask,
+        patch.object(Timer, "stop_alarm_cmd") as mock_stop,
+    ):
+        mock_mask.return_value = {signal.SIGUSR1}  # 元のマスク
+        manager.attach_mock(mock_mask, "mask")
+        manager.attach_mock(mock_stop, "stop")
+
+        timer.cleanup_by_interrupt()
+
+    assert [c[0] for c in manager.mock_calls] == ["mask", "stop", "mask"]
+    mock_stop.assert_called_once_with(timer.alarm_thr)
+    assert mock_mask.call_args_list == [
+        ((signal.SIG_BLOCK, {signal.SIGINT}),),
+        ((signal.SIG_SETMASK, {signal.SIGUSR1}),),
+    ]
+
+
+def test_main_keyboard_interrupt_twice(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """後始末の最中の 2 度目の Ctrl-C は無視して、止めきる。"""
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    with patch.object(
+        Timer, "get_key_name", side_effect=["", KeyboardInterrupt()]
+    ):
+        with patch.object(
+            Timer, "stop_alarm_cmd", side_effect=KeyboardInterrupt()
+        ) as mock_stop:
+            timer.clock.t_limit = 0.1
+            with pytest.raises(KeyboardInterrupt):
+                timer.main()
+
+    mock_stop.assert_called_once()
+
+
+def test_main_keyboard_interrupt_without_alarm(
+    timer, mock_click, mock_clock_time, mock_killpg
+):
+    """アラームに入る前の Ctrl-C は、そのまま送出し直すだけ。"""
+    mock_clock_time.monotonic.side_effect = [100.0, 100.1]
+
+    with patch.object(
+        Timer, "get_key_name", side_effect=[KeyboardInterrupt()]
+    ):
+        with pytest.raises(KeyboardInterrupt):
+            timer.main()
+
+    assert timer.alarm_thr is None
+    mock_killpg.assert_not_called()
+
+
+def test_stop_alarm_cmd_beep(timer, mock_click):
+    """ビープの経路（コマンド無し）では何もせず True。"""
+    thr = MagicMock()
+    assert timer.alarm_proc is None
+    assert timer.stop_alarm_cmd(thr) is True
+    assert timer.alarm_cmd_stopped is False
+
+
+def test_main_stops_alarm_cmd_by_key(
+    timer, mock_click, mock_clock_time, mock_subprocess, mock_killpg
+):
+    """キー入力でアラームを抜けたら、コマンドも止めてから返る。"""
+    stop_event = threading.Event()
+    proc = _running_proc(mock_subprocess, stop_event)
+    mock_killpg.side_effect = lambda pid, sig: stop_event.set()
+
+    timer.alarm_params = AlarmParams(1, 0.001, 0.001, "sleep 5")
+    mock_clock_time.monotonic.side_effect = [100.0, 110.0, 120.0]
+
+    with patch.object(Timer, "get_key_name", side_effect=["", "Q"]):
+        timer.clock.t_limit = 0.1
+        assert timer.main() is True
+
+    mock_killpg.assert_called_once_with(proc.pid, signal.SIGTERM)
+    assert stop_event.is_set()
 
 
 def test_alarm_stop_by_key(timer, mock_terminal, mock_click, mock_clock_time):

@@ -2,6 +2,9 @@
 # (c) 2026 Yoichi Tanibayashi
 #
 import math
+import os
+import signal
+import subprocess
 import threading
 import time
 from collections.abc import Callable
@@ -21,14 +24,22 @@ MAX_ALARM_SEC = SEC_DAY  # time.sleep() が OverflowError にならない上限
 
 @dataclass(frozen=True)
 class AlarmParams:
-    """Alarm parameters."""
+    """Alarm parameters.
+
+    ``cmd`` を指定すると、ビープの代わりにそのコマンドを
+    シェル経由で 1 回だけ実行する。
+    """
 
     count: int
     sec1: float
     sec2: float
+    cmd: str | None = None
 
     def __post_init__(self) -> None:
         """各フィールドの妥当性を確認する。"""
+        if self.cmd is not None and not self.cmd.strip():
+            raise ValueError(f"cmd must not be empty: cmd={self.cmd!r}")
+
         if self.count < 0:
             raise ValueError(f"count must be >= 0: count={self.count}")
 
@@ -71,6 +82,8 @@ class Timer:
     COUNT_MANY = 999
     DEF_SEC1 = 0.5
     DEF_SEC2 = 1.5
+    ALARM_STOP_SEC = 1.0  # コマンドを止めるときに待つ秒数
+    LOG_MAX_LEN = 200  # コマンドの出力をログに出す長さの上限
 
     DEF_TITLE = TimerTitle("Timer", "white")
     DEF_ALARM = AlarmParams(COUNT_MANY, DEF_SEC1, DEF_SEC2)
@@ -95,6 +108,13 @@ class Timer:
         self.is_active = False
         self.alarm_active = False
         self.quit_by_quitcmd = False  # quitコマンドによる終了
+
+        # アラームのコマンド（thr_alarm が入れ、stop_alarm_cmd が止める）
+        self.alarm_thr: threading.Thread | None = None
+        self.alarm_proc: subprocess.Popen[str] | None = None
+        # 起動を試みたら（失敗しても）立てる。stop_alarm_cmd がこれを待つ
+        self.alarm_proc_ready = threading.Event()
+        self.alarm_cmd_stopped = False  # キー入力で止めたか
 
         self.term = Terminal()
         self.__log.debug(f"term size:{self.term.width}x{self.term.height}")
@@ -211,10 +231,57 @@ class Timer:
     def main(self) -> bool:
         """Main.
 
+        ``Ctrl-C`` で抜けるときも、アラームのコマンドを止めてから
+        送出し直す。``start_new_session=True`` で子は別セッションに
+        いるので、端末が送る ``SIGINT`` は子に届かない
+        （握り潰す ``TerminalContext`` へ渡す前に、ここで止める）。
+        後始末の最中の 2 度目の ``Ctrl-C`` は無視する
+        （``SIGKILL`` を送る前に抜けると、子が残るため）。
+
         Return:
             bool: quitコマンドで終了した場合は True
         """
+        try:
+            return self._main()
+
+        except KeyboardInterrupt:
+            self.__log.debug("KeyboardInterrupt")
+            self.cleanup_by_interrupt()
+            raise
+
+    def cleanup_by_interrupt(self) -> None:
+        """``Ctrl-C`` で抜けるときの後始末。
+
+        後始末には最大 3 秒かかるので、その間に「効かない」と思った
+        利用者が 2 度目の ``Ctrl-C`` を押しうる。そこで抜けると
+        ``SIGKILL`` を送る前に終わってしまい、``SIGTERM`` を無視する
+        コマンドが残る。**後始末の間だけ ``SIGINT`` を止めておく**
+        （``pthread_sigmask`` は POSIX のみだが、``killpg`` を
+        使っている時点で POSIX 前提）。
+        """
+        if self.alarm_thr is None:
+            return
+
+        # 解除ではなく、元のマスクに戻す。呼ぶ側が SIGINT を
+        # 止めていることがあるため（ライブラリとして使う経路）
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+        try:
+            _ = self.stop_alarm_cmd(self.alarm_thr)
+        except KeyboardInterrupt:
+            # 止める前に届いていた分。後始末は済ませる
+            self.__log.debug("KeyboardInterrupt (again)")
+        finally:
+            _ = signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+
+    def _main(self) -> bool:
+        """メインループ本体（``main()`` から呼ぶ）。"""
         self.__log.debug("start.")
+
+        # 同じインスタンスで 2 回目を回せるように、毎回初期化する
+        self.alarm_proc = None
+        self.alarm_proc_ready.clear()
+        self.alarm_cmd_stopped = False
+        self.alarm_thr = None
 
         self.clock.start()
 
@@ -250,6 +317,7 @@ class Timer:
         if (
             thr := self.ring_alarm()
         ):  # アラーム alarm_active によっては鳴らない
+            self.alarm_thr = thr  # KeyboardInterrupt のときの後始末用
             with self.term.cbreak():
                 while self.alarm_active:
                     key_name = self.get_key_name()
@@ -268,7 +336,7 @@ class Timer:
         if self.key_map.get(key_name) == self.fn_quit:
             self.quit_by_quitcmd = True
 
-        if thr:
+        if thr and self.stop_alarm_cmd(thr):
             thr.join()
         click.echo(f"{ESQ_EL2}\r", nl=False)
 
@@ -341,12 +409,144 @@ class Timer:
         """Backward."""
         self.clock.backward(sec)
 
-    def thr_alarm(self, count, sec1, sec2):
-        """Alarm thread function."""
-        self.__log.debug(f"count={count},sec1={sec1},sec2={sec2}")
+    def exec_alarm_cmd(self, cmd: str) -> None:
+        """アラームのコマンドをシェル経由で 1 回だけ実行する。
 
-        for _ in range(count):
-            for s in [sec1, sec2]:
+        端末を子プロセスと取り合わないよう、``stdin`` は捨て、
+        ``stdout`` / ``stderr`` は取り込んでログに回す
+        （画面に直接書かせない）。
+
+        失敗しても（コマンドが無い、非ゼロ終了）ログに残して続行し、
+        ビープにフォールバックはしない。
+        """
+        self.__log.debug(f"cmd={cmd!r}")
+
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                errors="replace",
+                # 新しいセッションにして、止めるときに
+                # プロセスグループごと落とせるようにする
+                start_new_session=True,
+            )
+        except OSError as e:
+            self.__log.error(f"cmd={cmd!r}: {e!r}")
+            self.alarm_proc_ready.set()
+            return
+
+        self.alarm_proc = proc
+        self.alarm_proc_ready.set()
+
+        out, err = proc.communicate()  # 終わる（or 止められる）まで待つ
+
+        for name, text in (("stdout", out), ("stderr", err)):
+            if text and text.strip():
+                # 出力が長いコマンドでログを埋めない
+                self.__log.debug(
+                    f"{name}: {text.strip()[: self.LOG_MAX_LEN]}"
+                )
+
+        if proc.returncode == 0 or self.alarm_cmd_stopped:
+            # 自分で止めたときの負の returncode は失敗ではない
+            self.__log.debug(f"cmd={cmd!r}: returncode={proc.returncode}")
+        else:
+            self.__log.warning(f"cmd={cmd!r}: returncode={proc.returncode}")
+
+    def kill_alarm_cmd(
+        self, proc: subprocess.Popen[str], sig: int, name: str
+    ) -> bool:
+        """コマンドのプロセスグループごとシグナルを送る。
+
+        ``shell=True`` なのでシグナルの相手はシェルになる。シェルが
+        ``sleep`` などを子として持っていると、シェルだけ落としても
+        孫が残り、``stdout`` のパイプを握ったままになる。
+        ``start_new_session=True`` にしてあるので、プロセスグループ
+        （id はシェルの pid）ごと落とす。
+
+        ``Popen.send_signal()`` を使わないのは、それがシェル 1 つにしか
+        届かないため。代わりに、``send_signal()`` がやっている
+        「終わった相手には送らない」確認（pid が再利用され、無関係な
+        プロセスグループを撃つのを防ぐ）を、ここで自分で行う。
+
+        Returns:
+            bool: 送れた（または既に居ない）なら True
+        """
+        if proc.poll() is not None:
+            # 既に終わって回収済み。この pid は再利用されうる
+            self.__log.debug(f"{name}: already done: pid={proc.pid}")
+            return True
+
+        self.__log.debug(f"{name}: pid={proc.pid}")
+
+        try:
+            os.killpg(proc.pid, sig)
+        except ProcessLookupError:
+            self.__log.debug(f"{name}: already gone: pid={proc.pid}")
+        except OSError as e:
+            self.__log.error(f"{name}: {e!r}")
+            return False
+
+        return True
+
+    def stop_alarm_cmd(self, thr: threading.Thread) -> bool:
+        """実行中のアラームのコマンドを止める。
+
+        キー入力でアラームを抜けたときに呼ぶ。止めないと、コマンドが
+        終わるまで ``main()`` が返らず「[Q] が効かない」ように見える。
+
+        ``SIGTERM`` で止まらなければ、少し待ってから ``SIGKILL``。
+
+        Args:
+            thr: アラームのスレッド。コマンドの終了待ちに使う
+
+        Returns:
+            bool: 呼び出し元が ``thr.join()`` してよいなら True
+                （False なら、待つと固まる恐れがある）
+        """
+        if self.alarm_params.cmd is not None:
+            # スレッドがコマンドを起動し終えるのを待つ
+            # （待たないと、止めそこねたまま join() で固まる）
+            self.alarm_proc_ready.wait(timeout=self.ALARM_STOP_SEC)
+
+        proc = self.alarm_proc
+        if proc is None or proc.poll() is not None:
+            # ビープの経路、起動に失敗、または自然に終わっている
+            return True
+
+        self.alarm_cmd_stopped = True
+
+        for sig, name in (
+            (signal.SIGTERM, "SIGTERM"),
+            (signal.SIGKILL, "SIGKILL"),
+        ):
+            if not self.kill_alarm_cmd(proc, sig, name):
+                return False
+
+            thr.join(timeout=self.ALARM_STOP_SEC)
+            if not thr.is_alive():
+                return True
+
+        self.__log.warning(f"cmd not stopped: pid={proc.pid}")
+        return False
+
+    def thr_alarm(self, params: AlarmParams) -> None:
+        """Alarm thread function."""
+        self.__log.debug(f"params={params}")
+
+        if params.cmd is not None:
+            # ビープの代わりにコマンドを 1 回だけ実行する。
+            # コマンドが自然に終わってもキー入力は待つので、
+            # alarm_active は False にしない。
+            self.exec_alarm_cmd(params.cmd)
+            return
+
+        for _ in range(params.count):
+            for s in [params.sec1, params.sec2]:
                 if self.alarm_active:
                     click.echo("\a", nl=False)
                     time.sleep(s)
@@ -365,12 +565,18 @@ class Timer:
 
         thr = threading.Thread(
             target=self.thr_alarm,
-            args=(
-                self.alarm_params.count,
-                self.alarm_params.sec1,
-                self.alarm_params.sec2,
-            ),
+            args=(self.alarm_params,),
             daemon=True,
         )
-        thr.start()
+
+        # SIGINT を止めてから起動する。スレッドは生成時のマスクを
+        # 継ぐので、こうしないと Ctrl-C をこのスレッドが受け取り、
+        # 後始末の最中でもメインスレッドへ KeyboardInterrupt が飛ぶ
+        # （cleanup_by_interrupt() のマスクが効かなくなる）。
+        old_mask = signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+        try:
+            thr.start()
+        finally:
+            _ = signal.pthread_sigmask(signal.SIG_SETMASK, old_mask)
+
         return thr

@@ -5,6 +5,7 @@ from click.testing import CliRunner
 
 from tmr.cli import pomodoro, timer
 from tmr.timefmt import SEC_DAY
+from tmr.timer import Timer
 from tmr.view import TimerTitle
 
 
@@ -15,6 +16,7 @@ def test_timer_help():
     assert "Simple Timer" in result.output
     assert "--alarm-count" in result.output
     assert "--alarm-sec1" in result.output
+    assert "--alarm-cmd" in result.output
 
 
 def test_timer_exec():
@@ -177,3 +179,95 @@ def test_timer_alarm_sec_max_allowed(option):
 
         assert result.exit_code == 0
         instance.main.assert_called_once()
+
+
+def test_timer_alarm_cmd_passed():
+    """--alarm-cmd が AlarmParams に届く。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.Timer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.main.return_value = False
+
+        result = runner.invoke(timer, ["1", "--alarm-cmd", "echo hello"])
+
+        assert result.exit_code == 0
+        alarm_params = MockTimer.call_args[0][2]
+        assert alarm_params.cmd == "echo hello"
+
+
+def test_timer_alarm_cmd_default_is_none():
+    """--alarm-cmd 未指定なら cmd は None（従来どおりビープ）。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.Timer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.main.return_value = False
+
+        result = runner.invoke(timer, ["1"])
+
+        assert result.exit_code == 0
+        assert MockTimer.call_args[0][2].cmd is None
+
+
+def test_timer_alarm_cmd_short_option():
+    """短縮形 --cmd でも指定できる。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.Timer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.main.return_value = False
+
+        result = runner.invoke(timer, ["1", "--cmd", "echo hi"])
+
+        assert result.exit_code == 0
+        assert MockTimer.call_args[0][2].cmd == "echo hi"
+
+
+@pytest.mark.parametrize("value", ["", " ", "\t"])
+def test_timer_alarm_cmd_empty_rejected(value):
+    """空文字・空白のみの --alarm-cmd は usage error になる。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.Timer"):
+        result = runner.invoke(timer, ["1", "--alarm-cmd", value])
+
+        assert result.exit_code == 2
+        assert "Usage" in result.output
+        assert "must not be empty" in result.output
+
+
+@pytest.mark.parametrize("value", ["", " "])
+def test_pomodoro_alarm_cmd_empty_rejected(value):
+    """ポモドーロでも、空の --alarm-cmd は usage error になる。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.PomodoroTimer"):
+        result = runner.invoke(pomodoro, ["--alarm-cmd", value])
+
+        assert result.exit_code == 2
+        assert "Usage" in result.output
+        assert "must not be empty" in result.output
+
+
+def test_pomodoro_alarm_cmd_passed():
+    """--alarm-cmd が PomodoroConfig の alarm_params に届く。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.PomodoroTimer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.run.return_value = True
+
+        result = runner.invoke(pomodoro, ["--alarm-cmd", "echo hello"])
+
+        assert result.exit_code == 0
+        config = MockTimer.call_args[0][0]
+        assert config.alarm_params.cmd == "echo hello"
+
+
+def test_pomodoro_alarm_cmd_default_is_none():
+    """--alarm-cmd 未指定なら、従来どおりの AlarmParams。"""
+    runner = CliRunner()
+    with mock.patch("tmr.cli.PomodoroTimer") as MockTimer:
+        instance = MockTimer.return_value
+        instance.run.return_value = True
+
+        result = runner.invoke(pomodoro, [])
+
+        assert result.exit_code == 0
+        config = MockTimer.call_args[0][0]
+        assert config.alarm_params == Timer.DEF_ALARM

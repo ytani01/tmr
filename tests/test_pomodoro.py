@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from tmr.cli import pomodoro
 from tmr.pomodoro import PomodoroConfig, PomodoroTimer, phases
+from tmr.timer import AlarmParams, Timer
 from tmr.view import TimerTitle
 
 
@@ -67,6 +68,7 @@ def test_pomodoro_args():
     assert "--break-time" in result.output
     assert "--long-break-time" in result.output
     assert "--cycles" in result.output
+    assert "--alarm-cmd" in result.output
 
 
 def test_phases_one_cycle():
@@ -231,4 +233,36 @@ def test_pomodoro_timer_run_timer():
         assert args[0][0] == title
         assert args[0][1] == 10.0
         assert args[1]["enable_next"] is True
+        assert args[1]["alarm_params"] == Timer.DEF_ALARM
         instance.main.assert_called_once()
+
+
+def test_pomodoro_config_alarm_params_default():
+    """alarm_params の既定は Timer.DEF_ALARM。"""
+    config = PomodoroConfig(
+        work_sec=10.0,
+        break_sec=20.0,
+        long_break_sec=30.0,
+        cycles=1,
+    )
+    assert config.alarm_params == Timer.DEF_ALARM
+
+
+def test_pomodoro_run_timer_alarm_params():
+    """設定した alarm_params が Timer に渡る。"""
+    alarm_params = AlarmParams(999, 0.5, 1.5, "echo hello")
+    config = PomodoroConfig(
+        work_sec=0.1,
+        break_sec=0.1,
+        long_break_sec=0.1,
+        cycles=1,
+        alarm_params=alarm_params,
+    )
+    timer = PomodoroTimer(config)
+
+    with mock.patch("tmr.pomodoro.Timer") as MockTimer:
+        MockTimer.return_value.main.return_value = True
+
+        timer._run_timer(TimerTitle("TEST", "white", 16), 10.0)
+
+        assert MockTimer.call_args[1]["alarm_params"] == alarm_params

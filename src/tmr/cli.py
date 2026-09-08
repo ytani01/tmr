@@ -1,6 +1,7 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+import dataclasses
 import math
 
 import click
@@ -26,6 +27,18 @@ def _reject_non_finite(ctx, param, value):
     """
     if not math.isfinite(value):
         raise click.BadParameter(f"must be finite: {value}")
+
+    return value
+
+
+def _reject_empty(ctx, param, value):
+    """空文字・空白のみを弾く（省略時の ``None`` は素通し）。
+
+    ``ctx`` / ``param`` は使わないが、``click`` のコールバック規約で
+    3 引数を受ける。
+    """
+    if value is not None and not value.strip():
+        raise click.BadParameter(f"must not be empty: {value!r}")
 
     return value
 
@@ -84,6 +97,14 @@ def cli(ctx, debug):
     callback=_reject_non_finite,
     help="alarm sec2",
 )
+@click.option(
+    "--alarm-cmd",
+    "--cmd",
+    type=str,
+    default=None,
+    callback=_reject_empty,
+    help="alarm command (instead of beep)",
+)
 @click_common_opts(__version__)
 def timer(
     ctx,
@@ -93,6 +114,7 @@ def timer(
     alarm_count,
     alarm_sec1,
     alarm_sec2,
+    alarm_cmd,
     debug,
 ):
     """Simple Timer."""
@@ -101,7 +123,8 @@ def timer(
     _log.debug(
         f"minutes={minutes},"
         f"title={title!r},title_color={title_color!r},"
-        f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2})"
+        f"alarm_count={alarm_count},alarm_sec=({alarm_sec1},{alarm_sec2}),"
+        f"alarm_cmd={alarm_cmd!r}"
     )
 
     limit = int(minutes * SEC_MIN)
@@ -110,7 +133,7 @@ def timer(
         _ = Timer(
             TimerTitle(title, title_color),
             limit,
-            AlarmParams(alarm_count, alarm_sec1, alarm_sec2),
+            AlarmParams(alarm_count, alarm_sec1, alarm_sec2, alarm_cmd),
         ).main()
 
 
@@ -154,8 +177,18 @@ cli.add_command(timer, name="t")
     show_default=True,
     help="cycles",
 )
+@click.option(
+    "--alarm-cmd",
+    "--cmd",
+    type=str,
+    default=None,
+    callback=_reject_empty,
+    help="alarm command (instead of beep)",
+)
 @click_common_opts(__version__)
-def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
+def pomodoro(
+    ctx, work_time, break_time, long_break_time, cycles, alarm_cmd, debug
+):
     """Pomodoro Timer."""
     loggerInit(debug)
     _log.debug(f"command='{ctx.command.name}'")
@@ -163,7 +196,8 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         f"work_time={work_time}, "
         f"break_time={break_time}, "
         f"long_break_time={long_break_time}, "
-        f"cycles={cycles}"
+        f"cycles={cycles}, "
+        f"alarm_cmd={alarm_cmd!r}"
     )
 
     # 秒換算
@@ -172,6 +206,7 @@ def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):
         break_sec=break_time * SEC_MIN,
         long_break_sec=long_break_time * SEC_MIN,
         cycles=cycles,
+        alarm_params=dataclasses.replace(Timer.DEF_ALARM, cmd=alarm_cmd),
     )
 
     timer = PomodoroTimer(config)

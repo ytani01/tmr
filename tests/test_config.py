@@ -159,3 +159,38 @@ def test_bad_type(write_config):
 
     assert result.exit_code != 0
     assert "--alarm-count" in result.output
+
+
+def test_config_alarm_cmd(write_config, mock_timer):
+    """設定ファイルの `alarm-cmd` が AlarmParams に届く。"""
+    write_config('[timer]\nminutes = 1\nalarm-cmd = "echo hello"\n')
+
+    result = CliRunner().invoke(cli, ["timer"])
+
+    assert result.exit_code == 0
+    assert mock_timer.call_args[0][2].cmd == "echo hello"
+
+
+def test_config_alarm_cmd_empty_rejected(write_config, mock_timer):
+    """設定ファイルの空の `alarm-cmd` も usage error になる。"""
+    write_config('[timer]\nminutes = 1\nalarm-cmd = ""\n')
+
+    result = CliRunner().invoke(cli, ["timer"])
+
+    assert result.exit_code == 2
+    assert "must not be empty" in result.output
+    mock_timer.assert_not_called()
+
+
+def test_config_pomodoro_alarm_cmd(write_config):
+    """`[pomodoro]` の `alarm-cmd` が PomodoroConfig に届く。"""
+    write_config('[pomodoro]\nalarm-cmd = "echo hello"\n')
+
+    with mock.patch("tmr.cli.PomodoroTimer") as MockTimer:
+        MockTimer.return_value.run.return_value = True
+
+        result = CliRunner().invoke(cli, ["pomodoro"])
+
+        assert result.exit_code == 0
+        config = MockTimer.call_args[0][0]
+        assert config.alarm_params.cmd == "echo hello"

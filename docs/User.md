@@ -45,6 +45,7 @@ Options:
   --alarm-count INTEGER RANGE     alarm count  [default: 999; x>=0]
   --alarm-sec1, --s1 FLOAT RANGE  alarm sec1  [default: 0.5; 0<=x<=86400]
   --alarm-sec2, --s2 FLOAT RANGE  alarm sec2  [default: 1.5; 0<=x<=86400]
+  --alarm-cmd, --cmd TEXT         alarm command (instead of beep)
   -V, -v, --version               Show the version and exit.
   -d, --debug                     debug flag
   -h, --help                      Show this message and exit.
@@ -78,6 +79,7 @@ Options:
   -l, --long-break-time FLOAT RANGE
                                   long break time  [default: 15.0; x>0]
   -c, --cycles INTEGER RANGE      cycles  [default: 4; x>=1]
+  --alarm-cmd, --cmd TEXT         alarm command (instead of beep)
   -V, -v, --version               Show the version and exit.
   -d, --debug                     debug flag
   -h, --help                      Show this message and exit.
@@ -199,14 +201,15 @@ COMMAND LIST
 ## == アラーム
 
 タイマーが満了すると、ベル文字（`\a`）を鳴らします。
-実際に音が出るかは端末の設定によります。
+実際に音が出るかは端末の設定によります
+（`--alarm-cmd` を指定すると、代わりに任意のコマンドを実行します。後述）。
 
 - 何かキーを押すと止まります。押したキーが `[Q]` / `[ESC]` なら、
   ポモドーロはそこで終わります。
 - 鳴っている間も、画面は更新され続けます。
 
-`tmr timer` では鳴らし方を指定できます（`tmr pomodoro` にはこの
-オプションはありません）。
+ベルの鳴らし方は `tmr timer` でだけ指定できます
+（`tmr pomodoro` には次の 3 つのオプションはありません）。
 
 | オプション | 意味 | 既定 |
 |---|---|---|
@@ -227,6 +230,58 @@ tmr timer 5 --alarm-count 5 --s1 0.2 --s2 0.2
 ```
 
 
+### === ベルの代わりにコマンドを実行する
+
+`--alarm-cmd`（短縮形 `--cmd`）を指定すると、ベルの代わりに
+そのコマンドを実行します。音声ファイルの再生やデスクトップ通知に
+使えます。`tmr timer` と `tmr pomodoro` の両方で使えます。
+
+```bash
+tmr timer 5 --alarm-cmd "aplay ~/sound/alarm.wav"
+tmr timer 5 --cmd "notify-send 'tmr' 'time up'"
+tmr pomodoro --cmd "paplay /usr/share/sounds/freedesktop/stereo/bell.oga"
+```
+
+- **ベルは鳴らなくなります**（置き換えです）。
+  `--alarm-count` などは効きません。
+- コマンドは**満了時に 1 回だけ**実行します。
+- コマンドが終わっても、**キーを押すまでアラームの状態が続きます**
+  （ベルのときと同じで、ポモドーロは次のフェーズへ進みません）。
+- **キーを押すと、まだ動いているコマンドも止めます。**
+  長く鳴らすコマンド（`mpv` で曲を流すなど）を指定しても、
+  `[Q]` や `[N]` はすぐ効きます。`Ctrl-C` で終わらせたときも同じで、
+  コマンドは止まります。
+- コマンドの画面出力は**画面に出さず、ログに回します**
+  （表示が崩れないため）。`-d` を付けると、出力（長いときは先頭だけ）と
+  終了コードがログに出ます。失敗（コマンドが無い、非ゼロ終了）は `-d` 無しでも
+  警告として出ます。
+- コマンドが見つからない、または失敗した場合も、そのまま続きます。
+  ベルには戻りません。
+- コマンドはキーボードを読めません（入力は空になります）。
+  `mpv` や `less` のように打鍵を待つコマンドは向きません。
+- ポモドーロでは、全フェーズで同じコマンドを使います
+  （作業と休憩で分けることはできません）。
+- 空文字・空白のみ（`--cmd ""`）はエラーになります（終了コード 2）。
+
+次の書き方は避けてください。**変なコマンドを書くと、tmr の側では
+どうにもできません。**
+
+- **出力が大量に出るコマンド**（`yes`、`tail -f` など）。
+  コマンドの出力はログに回すために貯めるので、**tmr がメモリ不足で
+  落ちることがあります**。
+- **`&` を付けてバックグラウンドにする書き方**（`aplay foo.wav &` など）。
+  キーを押しても止められず、**そのコマンドが終わるまで tmr 自体が
+  止まって見えます**（キーを押しても画面が変わらず、ポモドーロなら
+  次のフェーズにも進みません）。tmr から見るとシェルは既に終わって
+  いるので、止める相手が分からないためです。
+
+**注意: 指定した文字列は、そのままシェルに渡ります**
+（`subprocess.Popen(cmd, shell=True)`）。パイプやリダイレクトも
+書けますが、その分、書き間違いがそのまま実行されます。**設定ファイル
+（`~/.config/tmr/config.toml`）に書いた文字列も同じくシェルに渡る**ので、
+自分で書いた内容だけを置いてください。
+
+
 ## == 設定ファイル
 
 よく使う値を `~/.config/tmr/config.toml` に書いておけます
@@ -244,6 +299,7 @@ title-color = "green"
 work-time = 25.0
 break-time = 5.0
 cycles = 4
+alarm-cmd = "aplay ~/sound/alarm.wav"
 ```
 
 - セクション名はサブコマンドの名前（別名の `t` / `p` ではなく

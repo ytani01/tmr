@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass
 
 from .mylog import getLogger
-from .timer import Timer
+from .timer import AlarmParams, Timer
 from .view import TimerTitle
 
 _log = getLogger("pomodoro")
@@ -18,6 +18,7 @@ class PomodoroConfig:
     break_sec: float
     long_break_sec: float
     cycles: int
+    alarm_params: AlarmParams = Timer.DEF_ALARM
 
     def __post_init__(self) -> None:
         """各フィールドの妥当性を確認する。"""
@@ -105,5 +106,10 @@ class PomodoroTimer:
         """
         self.__log.debug(f"title={title}, seconds={seconds}")
 
-        timer = Timer(title, seconds, enable_next=True)
+        timer = Timer(
+            title,
+            seconds,
+            alarm_params=self.config.alarm_params,
+            enable_next=True,
+        )
         return timer.main()
