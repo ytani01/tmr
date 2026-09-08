@@ -1,10 +1,60 @@
+import dataclasses
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 
 from tmr.cli import pomodoro
 from tmr.pomodoro import PomodoroConfig, PomodoroTimer, phases
 from tmr.view import TimerTitle
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("work_sec", 0),
+        ("work_sec", -1),
+        ("work_sec", float("nan")),
+        ("work_sec", float("inf")),
+        ("break_sec", 0),
+        ("break_sec", -1),
+        ("break_sec", float("nan")),
+        ("break_sec", float("inf")),
+        ("long_break_sec", 0),
+        ("long_break_sec", -1),
+        ("long_break_sec", float("nan")),
+        ("long_break_sec", float("inf")),
+        ("cycles", 0),
+        ("cycles", -1),
+    ],
+)
+def test_pomodoro_config_invalid_field_raises(field, value):
+    """各フィールドが不正なら PomodoroConfig の構築時に ValueError。"""
+    work_sec = value if field == "work_sec" else 10.0
+    break_sec = value if field == "break_sec" else 20.0
+    long_break_sec = value if field == "long_break_sec" else 30.0
+    cycles = value if field == "cycles" else 2
+
+    with pytest.raises(ValueError):
+        PomodoroConfig(
+            work_sec=work_sec,
+            break_sec=break_sec,
+            long_break_sec=long_break_sec,
+            cycles=cycles,
+        )
+
+
+def test_pomodoro_config_is_frozen():
+    """構築後の代入は FrozenInstanceError になる。"""
+    config = PomodoroConfig(
+        work_sec=10.0,
+        break_sec=20.0,
+        long_break_sec=30.0,
+        cycles=2,
+    )
+
+    with pytest.raises(dataclasses.FrozenInstanceError):
+        config.cycles = 0  # type: ignore[misc]
 
 
 def test_pomodoro_args():

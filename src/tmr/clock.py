@@ -3,6 +3,7 @@
 #
 """タイマーの時刻管理（端末に依存しない部分）。"""
 
+import math
 import time
 
 from .mylog import getLogger
@@ -20,6 +21,11 @@ class TimerClock:
     def __init__(self, t_limit: float):
         """Constructor."""
         self.__log.debug(f"t_limit={t_limit}")
+
+        if not math.isfinite(t_limit) or t_limit <= 0:
+            raise ValueError(
+                f"t_limit must be a finite number > 0: t_limit={t_limit}"
+            )
 
         self.t_limit = t_limit
         self.t_start = 0.0

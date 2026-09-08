@@ -1,6 +1,8 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+import math
+
 import click
 
 from . import __version__
@@ -9,11 +11,23 @@ from .config import ConfigGroup
 from .mylog import getLogger, loggerInit
 from .pomodoro import PomodoroConfig, PomodoroTimer
 from .terminal import TerminalContext
-from .timefmt import SEC_MIN
+from .timefmt import SEC_DAY, SEC_MIN
 from .timer import AlarmParams, Timer
 from .view import TimerTitle
 
 _log = getLogger("main")
+
+
+def _reject_non_finite(ctx, param, value):
+    """``nan`` / ``inf`` を弾く（``FloatRange`` の後段用）。
+
+    ``ctx`` / ``param`` は使わないが、``click`` のコールバック規約で
+    3 引数を受ける。
+    """
+    if not math.isfinite(value):
+        raise click.BadParameter(f"must be finite: {value}")
+
+    return value
 
 
 @click.group(cls=ConfigGroup)
@@ -27,7 +41,7 @@ def cli(ctx, debug):
 
 
 @click.command()
-@click.argument("minutes", type=int, nargs=1)
+@click.argument("minutes", type=click.IntRange(min=1), nargs=1)
 @click.option(
     "--title",
     "-t",
@@ -47,7 +61,7 @@ def cli(ctx, debug):
 )
 @click.option(
     "--alarm-count",
-    type=int,
+    type=click.IntRange(min=0),
     default=999,
     show_default=True,
     help="alarm count",
@@ -55,17 +69,19 @@ def cli(ctx, debug):
 @click.option(
     "--alarm-sec1",
     "--s1",
-    type=float,
+    type=click.FloatRange(min=0, max=SEC_DAY),
     default=0.5,
     show_default=True,
+    callback=_reject_non_finite,
     help="alarm sec1",
 )
 @click.option(
     "--alarm-sec2",
     "--s2",
-    type=float,
+    type=click.FloatRange(min=0, max=SEC_DAY),
     default=1.5,
     show_default=True,
+    callback=_reject_non_finite,
     help="alarm sec2",
 )
 @click_common_opts(__version__)
@@ -106,29 +122,37 @@ cli.add_command(timer, name="t")
 @click.option(
     "--work-time",
     "-w",
-    type=float,
+    type=click.FloatRange(min=0, min_open=True),
     default=25.0,
     show_default=True,
+    callback=_reject_non_finite,
     help="working time",
 )
 @click.option(
     "--break-time",
     "-b",
-    type=float,
+    type=click.FloatRange(min=0, min_open=True),
     default=5.0,
     show_default=True,
+    callback=_reject_non_finite,
     help="break time",
 )
 @click.option(
     "--long-break-time",
     "-l",
-    type=float,
+    type=click.FloatRange(min=0, min_open=True),
     default=15.0,
     show_default=True,
+    callback=_reject_non_finite,
     help="long break time",
 )
 @click.option(
-    "--cycles", "-c", type=int, default=4, show_default=True, help="cycles"
+    "--cycles",
+    "-c",
+    type=click.IntRange(min=1),
+    default=4,
+    show_default=True,
+    help="cycles",
 )
 @click_common_opts(__version__)
 def pomodoro(ctx, work_time, break_time, long_break_time, cycles, debug):

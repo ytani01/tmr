@@ -83,9 +83,9 @@ Options:
   -t, --title TEXT                alarm title  [default: Timer]
   -c, --title-color, --color TEXT
                                   title color  [default: blue]
-  --alarm-count INTEGER           alarm count  [default: 999]
-  --alarm-sec1, --s1 FLOAT        alarm sec1  [default: 0.5]
-  --alarm-sec2, --s2 FLOAT        alarm sec2  [default: 1.5]
+  --alarm-count INTEGER RANGE     alarm count  [default: 999; x>=0]
+  --alarm-sec1, --s1 FLOAT RANGE  alarm sec1  [default: 0.5; 0<=x<=86400]
+  --alarm-sec2, --s2 FLOAT RANGE  alarm sec2  [default: 1.5; 0<=x<=86400]
   -V, -v, --version               Show the version and exit.
   -d, --debug                     debug flag
   -h, --help                      Show this message and exit.
@@ -101,13 +101,14 @@ Usage: tmr pomodoro [OPTIONS]
   Pomodoro Timer.
 
 Options:
-  -w, --work-time FLOAT        working time  [default: 25.0]
-  -b, --break-time FLOAT       break time  [default: 5.0]
-  -l, --long-break-time FLOAT  long break time  [default: 15.0]
-  -c, --cycles INTEGER         cycles  [default: 4]
-  -V, -v, --version            Show the version and exit.
-  -d, --debug                  debug flag
-  -h, --help                   Show this message and exit.
+  -w, --work-time FLOAT RANGE     working time  [default: 25.0; x>0]
+  -b, --break-time FLOAT RANGE    break time  [default: 5.0; x>0]
+  -l, --long-break-time FLOAT RANGE
+                                  long break time  [default: 15.0; x>0]
+  -c, --cycles INTEGER RANGE      cycles  [default: 4; x>=1]
+  -V, -v, --version               Show the version and exit.
+  -d, --debug                     debug flag
+  -h, --help                      Show this message and exit.
 ```
 
 

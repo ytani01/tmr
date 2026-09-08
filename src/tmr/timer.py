@@ -1,6 +1,7 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+import math
 import threading
 import time
 from collections.abc import Callable
@@ -12,7 +13,10 @@ from blessed import Terminal
 from .clock import TimerClock
 from .mylog import getLogger
 from .terminal import ESQ_EL2
+from .timefmt import SEC_DAY
 from .view import TimerTitle, TimerView
+
+MAX_ALARM_SEC = SEC_DAY  # time.sleep() が OverflowError にならない上限
 
 
 @dataclass(frozen=True)
@@ -22,6 +26,19 @@ class AlarmParams:
     count: int
     sec1: float
     sec2: float
+
+    def __post_init__(self) -> None:
+        """各フィールドの妥当性を確認する。"""
+        if self.count < 0:
+            raise ValueError(f"count must be >= 0: count={self.count}")
+
+        for name in ("sec1", "sec2"):
+            value = getattr(self, name)
+            if not math.isfinite(value) or value < 0 or value > MAX_ALARM_SEC:
+                raise ValueError(
+                    f"{name} must be a finite number in "
+                    f"[0, {MAX_ALARM_SEC}]: {name}={value}"
+                )
 
 
 @dataclass

@@ -5,8 +5,52 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from tmr.timer import AlarmParams, Timer
+from tmr.timer import MAX_ALARM_SEC, AlarmParams, Timer
 from tmr.view import TimerTitle
+
+
+@pytest.mark.parametrize(
+    "count,sec1,sec2",
+    [
+        (-1, 0.5, 1.5),
+        (0, -1, 1.5),
+        (0, 0.5, -1),
+        (0, float("nan"), 1.5),
+        (0, 0.5, float("inf")),
+    ],
+)
+def test_alarm_params_invalid_raises(count, sec1, sec2):
+    """count / sec1 / sec2 が不正なら ValueError。"""
+    with pytest.raises(ValueError):
+        AlarmParams(count, sec1, sec2)
+
+
+def test_alarm_params_zero_allowed():
+    """count=0・sec=0 は「鳴らさない／間を空けない」として許す。"""
+    params = AlarmParams(0, 0.0, 0.0)
+    assert params.count == 0
+    assert params.sec1 == 0.0
+    assert params.sec2 == 0.0
+
+
+@pytest.mark.parametrize("field", ["sec1", "sec2"])
+def test_alarm_params_sec_too_large_raises(field):
+    """sec1 / sec2 が上限（1 日）を超えると ValueError。"""
+    sec1 = MAX_ALARM_SEC + 1 if field == "sec1" else 0.5
+    sec2 = MAX_ALARM_SEC + 1 if field == "sec2" else 1.5
+
+    with pytest.raises(ValueError):
+        AlarmParams(count=0, sec1=sec1, sec2=sec2)
+
+
+@pytest.mark.parametrize("field", ["sec1", "sec2"])
+def test_alarm_params_sec_max_allowed(field):
+    """sec1 / sec2 は上限（1 日）ちょうどなら通る。"""
+    sec1 = MAX_ALARM_SEC if field == "sec1" else 0.5
+    sec2 = MAX_ALARM_SEC if field == "sec2" else 1.5
+
+    params = AlarmParams(count=0, sec1=sec1, sec2=sec2)
+    assert getattr(params, field) == MAX_ALARM_SEC
 
 
 @pytest.fixture

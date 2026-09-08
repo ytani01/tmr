@@ -1,26 +1,10 @@
 # TODO
 
-**残っている項目: TODO-012, TODO-013, TODO-014, TODO-015。**
-これまでに 11 件を決着させた。
+**残っている項目: TODO-013, TODO-014, TODO-015。**
+これまでに 12 件を決着させた。
 新しく足すときは「完了済み」の上に節を作る。**番号は `TODO-016` から。**
 
 ---
-
-## TODO-012. 0 分・0 サイクルを指定すると壊れる
-
-|      | main | 担当 |
-|------|------|------|
-| 見込み | Opus 5 / effort medium | implementer + reviewer + verifier |
-
-- [ ] `tmr timer 0` — `TimerClock.rate` が `elapsed / t_limit` でゼロ除算に
-      なる（**コードを読んだだけで未再現**。まず再現から）
-- [ ] `tmr pomodoro -c 0` — `phases()` が何も yield しないまま
-      `while True` を回り続けて固まる
-- [ ] どちらも「そもそも受け付けない」のか「0 として動かす」のかを決める。
-      CLI で弾くなら `click` の型・コールバックで済む
-
-どちらも TODO-010 より前からあり、分割で持ち込んだものではない
-（TODO-010 の reviewer が読んで気づいた）。
 
 ## TODO-013. `ProgressBar` が古い `t_limit` を持ち続ける
 
@@ -107,6 +91,7 @@ help 出力は書いたとおりに試せるので、再現の確認は `verifie
 1 項目 1 ファイル。`archives/todo/` にある（新しい順）。
 **やらないと決めたものの理由もそこにある。** 蒸し返す前に読むこと。
 
+- [**TODO-012.** 0 分・0 サイクルを指定すると壊れる](archives/todo/TODO-012.%200%20分・0%20サイクルを指定すると壊れる.md)
 - [**TODO-010.** `Timer` を分割し、引数をデータクラスにする](archives/todo/TODO-010.%20Timer%20を分割し、引数をデータクラスにする.md)
 - [**TODO-011.** `docs/mylog.md` を消し、`mylog.py` の docstring に寄せる](archives/todo/TODO-011.%20docs-mylog.md%20を消し、mylog.py%20の%20docstring%20に寄せる.md)
 - [**TODO-009.** モジュール構成を整理する（移動と改名だけ）](archives/todo/TODO-009.%20モジュール構成を整理する（移動と改名だけ）.md)

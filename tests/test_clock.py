@@ -21,6 +21,15 @@ def clock(mock_time):
     return TimerClock(180.0)
 
 
+@pytest.mark.parametrize("t_limit", [0, -1, float("nan"), float("inf")])
+def test_t_limit_invalid_raises(mock_time, t_limit):
+    """t_limit が 0 以下、または nan / inf なら ValueError。"""
+    _ = mock_time
+
+    with pytest.raises(ValueError):
+        TimerClock(t_limit)
+
+
 def test_initial_state(clock):
     """初期状態。"""
     assert clock.t_limit == 180.0

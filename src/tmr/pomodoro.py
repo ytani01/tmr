@@ -1,6 +1,7 @@
 #
 # (c) 2026 Yoichi Tanibayashi
 #
+import math
 from collections.abc import Iterator
 from dataclasses import dataclass
 
@@ -8,12 +9,25 @@ from .timer import Timer
 from .view import TimerTitle
 
 
-@dataclass
+@dataclass(frozen=True)
 class PomodoroConfig:
     work_sec: float
     break_sec: float
     long_break_sec: float
     cycles: int
+
+    def __post_init__(self) -> None:
+        """各フィールドの妥当性を確認する。"""
+        # 時間のフィールドを足したら、ここにも足す
+        for name in ("work_sec", "break_sec", "long_break_sec"):
+            value = getattr(self, name)
+            if not math.isfinite(value) or value <= 0:
+                raise ValueError(
+                    f"{name} must be a finite number > 0: {name}={value}"
+                )
+
+        if self.cycles < 1:
+            raise ValueError(f"cycles must be >= 1: cycles={self.cycles}")
 
 
 TITLE_WIDTH = 16

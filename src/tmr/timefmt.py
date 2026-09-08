@@ -5,6 +5,8 @@
 
 SEC_MIN = 60  # seconds per minute
 MIN_HOUR = 60  # minutes per hour
+HOUR_DAY = 24  # hours per day
+SEC_DAY = SEC_MIN * MIN_HOUR * HOUR_DAY  # seconds per day
 
 
 def t_str(sec: float, omit_sec: bool = False) -> str:

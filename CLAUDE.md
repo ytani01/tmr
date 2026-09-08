@@ -51,6 +51,13 @@ uv run mypy src tests
 - タイトルは `TimerTitle(text, color, width)`、アラームの鳴らし方は
   `AlarmParams(count, sec1, sec2)`。`width` が正なら表示時に桁を揃える
   （ポモドーロがフェーズ名を 16 桁で並べるのに使う）
+- 0 以下・`nan`・`inf` の時間やサイクル数は、CLI では `click.IntRange` /
+  `click.FloatRange` とコールバックで弾き、`TimerClock` /
+  `PomodoroConfig` / `AlarmParams` でも `ValueError` で弾く二重の作り。
+  `Timer` / `PomodoroTimer` をライブラリとして直接使う経路は CLI を
+  通らないため（TODO-012）。**ただしアラームの回数と間隔は 0 を許す**
+  （鳴らさない／間を空けない）。間隔は `time.sleep()` が
+  `OverflowError` にならないよう 1 日（`timefmt.SEC_DAY`）を上限とする
 
 ### 戻り値でフェーズを制御する
 
